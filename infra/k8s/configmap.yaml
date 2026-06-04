@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: trading-config
+  namespace: multi-agent-trading
+data:
+  APP_ENV: "k8s"
+  OPENAI_BASE_URL: "https://api.openai.com/v1"
+  OPENAI_MODEL: "gpt-4o-mini"
+  EMBEDDING_MODEL: "text-embedding-3-small"
+  QDRANT_URL: "http://qdrant:6333"
+  QDRANT_COLLECTION: "market_research"
+  DATA_PROVIDER: "akshare"
+  USE_SAMPLE_DATA_FALLBACK: "true"
+  CORS_ORIGINS: "http://localhost:8080,http://frontend"
