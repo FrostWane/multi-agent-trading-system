@@ -130,8 +130,8 @@ POST /api/rag/ingest
 ```json
 {
   "symbol": "000001",
-  "start_date": "2024-01-01",
-  "end_date": "2024-12-31",
+  "start_date": "2026-01-01",
+  "end_date": "2026-06-04",
   "horizon": "1m",
   "risk_preference": "balanced"
 }

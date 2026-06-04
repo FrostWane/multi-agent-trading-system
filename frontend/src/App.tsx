@@ -13,11 +13,18 @@ import type { AgentEvent, AnalysisSnapshot, AnalyzeRequest } from "./types/analy
 
 const defaultRequest: AnalyzeRequest = {
   symbol: "000001",
-  start_date: "2024-01-01",
-  end_date: "2024-12-31",
+  start_date: "2026-01-01",
+  end_date: formatLocalDate(new Date()),
   horizon: "1m",
   risk_preference: "balanced"
 };
+
+function formatLocalDate(value: Date) {
+  const year = value.getFullYear();
+  const month = String(value.getMonth() + 1).padStart(2, "0");
+  const day = String(value.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
 
 export function App() {
   const [form, setForm] = useState<AnalyzeRequest>(defaultRequest);

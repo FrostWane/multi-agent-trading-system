@@ -11,8 +11,8 @@ RiskPreference = Literal["conservative", "balanced", "aggressive"]
 
 class AnalyzeRequest(BaseModel):
     symbol: str = Field(default="000001", min_length=6, max_length=9)
-    start_date: date = Field(default=date(2024, 1, 1))
-    end_date: date = Field(default=date(2024, 12, 31))
+    start_date: date = Field(default=date(2026, 1, 1))
+    end_date: date = Field(default_factory=date.today)
     horizon: str = Field(default="1m", description="Analysis horizon, for example 1w, 1m, 3m")
     risk_preference: RiskPreference = "balanced"
 
