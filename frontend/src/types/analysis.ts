@@ -63,11 +63,19 @@ export interface AnalysisResult {
     recommendation?: string;
     citations?: Citation[];
     disclaimer?: string;
+    llm_enabled?: boolean;
+    llm_commentary?: string;
+    key_points?: string[];
+    risk_notes?: string[];
+    llm_error?: string;
   };
   critic: {
     passed?: boolean;
     confidence?: string;
     issues?: string[];
+    suggestions?: string[];
+    llm_enabled?: boolean;
+    llm_error?: string;
   };
 }
 

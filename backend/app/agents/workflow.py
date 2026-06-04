@@ -7,7 +7,8 @@ from app.services.backtest import run_moving_average_backtest
 from app.services.data_provider import MarketDataProvider
 from app.services.indicators import summarize_indicators
 from app.services.rag import search_market_docs
-from app.services.report import build_report
+from app.services.llm import llm_available
+from app.services.report import build_llm_report, review_report_with_llm
 from app.services.risk import assess_risk
 
 
@@ -122,14 +123,18 @@ def _backtest_agent(state: AnalysisState, emit: EmitEvent | None) -> AnalysisSta
 
 
 def _report_agent(state: AnalysisState, emit: EmitEvent | None) -> AnalysisState:
-    _emit(emit, "Report Agent", "running", "正在综合各智能体结论。")
-    state["report"] = build_report(state)
+    message = "正在调用大模型生成中文研究报告。" if llm_available() else "正在综合各智能体结论。"
+    _emit(emit, "Report Agent", "running", message)
+    state["report"] = build_llm_report(state)
     _emit(
         emit,
         "Report Agent",
         "completed",
-        "已生成结构化研究报告。",
-        {"recommendation": state["report"]["recommendation"]},
+        "已生成大模型增强研究报告。" if state["report"].get("llm_enabled") else "已生成结构化研究报告。",
+        {
+            "recommendation": state["report"]["recommendation"],
+            "llm_enabled": state["report"].get("llm_enabled", False),
+        },
     )
     return state
 
@@ -145,11 +150,13 @@ def _critic_agent(state: AnalysisState, emit: EmitEvent | None) -> AnalysisState
     if state.get("risk", {}).get("level") == "high" and report.get("recommendation") != "cautious":
         issues.append("高风险场景应给出谨慎建议")
 
-    state["critic"] = {
+    rule_review = {
         "passed": not issues,
         "issues": issues,
         "confidence": "medium" if issues else "high",
+        "llm_enabled": False,
     }
+    state["critic"] = review_report_with_llm(state, rule_review)
     _emit(
         emit,
         "Critic Agent",

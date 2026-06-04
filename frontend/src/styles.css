@@ -508,6 +508,13 @@ button:disabled {
   margin: 0;
 }
 
+.llm-commentary {
+  background: #f8fafc;
+  border-left: 3px solid #2563eb;
+  border-radius: 6px;
+  padding: 10px 12px;
+}
+
 .report-tags {
   display: flex;
   flex-wrap: wrap;
@@ -543,6 +550,28 @@ button:disabled {
 
 .report-body small {
   color: #64748b;
+}
+
+.report-list {
+  display: grid;
+  gap: 8px;
+}
+
+.report-list strong {
+  font-size: 13px;
+}
+
+.report-list ul {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding-left: 18px;
+}
+
+.report-list li {
+  color: #475569;
+  font-size: 13px;
+  line-height: 1.5;
 }
 
 @keyframes spin {

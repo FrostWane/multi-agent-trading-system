@@ -1,5 +1,9 @@
 from __future__ import annotations
 
+from typing import Any
+
+from app.services.llm import LLMError, llm_client, llm_available
+
 
 def build_report(state: dict) -> dict:
     request = state["request"]
@@ -48,6 +52,8 @@ def build_report(state: dict) -> dict:
     return {
         "summary": summary,
         "recommendation": recommendation,
+        "llm_enabled": False,
+        "llm_commentary": "",
         "sections": {
             "technical": indicators,
             "risk": risk,
@@ -56,4 +62,98 @@ def build_report(state: dict) -> dict:
         },
         "citations": citations,
         "disclaimer": "本报告仅用于研究和学习，不构成任何投资建议。",
+    }
+
+
+def _compact_state_for_llm(state: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "request": state.get("request", {}),
+        "indicators": state.get("indicators", {}),
+        "risk": state.get("risk", {}),
+        "backtest": state.get("backtest", {}),
+        "research": [
+            {
+                "title": item.get("title"),
+                "source": item.get("source"),
+                "published_at": item.get("published_at"),
+                "doc_type": item.get("doc_type"),
+                "content": item.get("content"),
+                "sentiment": item.get("sentiment"),
+                "score": item.get("score"),
+            }
+            for item in state.get("research", [])[:5]
+        ],
+        "rule_report": build_report(state),
+    }
+
+
+def build_llm_report(state: dict[str, Any]) -> dict[str, Any]:
+    """Generate a Chinese report with LLM when configured, otherwise return rule report."""
+    rule_report = build_report(state)
+    if not llm_available():
+        return rule_report
+
+    prompt = (
+        "你是一个严谨的 A 股量化研究智能体。请基于输入 JSON 生成中文研究报告，"
+        "必须保留可追溯引用，不得编造数据，不得给出确定性投资承诺。"
+        "仅输出 JSON，字段包括 summary、recommendation、llm_commentary、key_points、risk_notes。"
+        "recommendation 只能是 watchlist_positive、neutral、cautious 三者之一。"
+    )
+    try:
+        llm_result = llm_client.chat_json(prompt, _compact_state_for_llm(state))
+    except LLMError as exc:
+        rule_report["llm_enabled"] = False
+        rule_report["llm_error"] = str(exc)
+        return rule_report
+
+    summary = str(llm_result.get("summary") or rule_report["summary"])
+    recommendation = str(llm_result.get("recommendation") or rule_report["recommendation"])
+    if recommendation not in {"watchlist_positive", "neutral", "cautious"}:
+        recommendation = rule_report["recommendation"]
+
+    rule_report.update(
+        {
+            "summary": summary,
+            "recommendation": recommendation,
+            "llm_enabled": True,
+            "llm_commentary": str(llm_result.get("llm_commentary") or ""),
+            "key_points": llm_result.get("key_points", []),
+            "risk_notes": llm_result.get("risk_notes", []),
+        }
+    )
+    return rule_report
+
+
+def review_report_with_llm(state: dict[str, Any], rule_review: dict[str, Any]) -> dict[str, Any]:
+    if not llm_available():
+        return rule_review
+
+    prompt = (
+        "你是报告质检智能体。请审查输入中的量化报告是否过度自信、是否缺少引用、"
+        "高风险时是否谨慎。仅输出 JSON，字段包括 passed、confidence、issues、suggestions。"
+        "confidence 只能是 high、medium、low。issues 和 suggestions 必须是中文字符串数组。"
+    )
+    payload = {
+        "state": _compact_state_for_llm(state),
+        "report": state.get("report", {}),
+        "rule_review": rule_review,
+    }
+    try:
+        llm_result = llm_client.chat_json(prompt, payload, temperature=0.1)
+    except LLMError as exc:
+        review = dict(rule_review)
+        review["llm_enabled"] = False
+        review["llm_error"] = str(exc)
+        return review
+
+    confidence = str(llm_result.get("confidence") or rule_review.get("confidence", "medium"))
+    if confidence not in {"high", "medium", "low"}:
+        confidence = str(rule_review.get("confidence", "medium"))
+
+    return {
+        "passed": bool(llm_result.get("passed", rule_review.get("passed", False))),
+        "issues": llm_result.get("issues", rule_review.get("issues", [])),
+        "confidence": confidence,
+        "suggestions": llm_result.get("suggestions", []),
+        "llm_enabled": True,
     }

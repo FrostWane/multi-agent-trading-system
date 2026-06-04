@@ -30,7 +30,29 @@ export function ReportPanel({ result }: { result: AnalysisResult | null }) {
             <span>{RECOMMENDATION_LABELS[report.recommendation ?? ""] ?? report.recommendation}</span>
             <span>置信度 {CONFIDENCE_LABELS[critic?.confidence ?? ""] ?? "待定"}</span>
             <span>{critic?.passed ? "校验通过" : "等待校验"}</span>
+            <span>{report.llm_enabled ? "大模型增强" : "规则模式"}</span>
           </div>
+          {report.llm_commentary ? <p className="llm-commentary">{report.llm_commentary}</p> : null}
+          {report.key_points && report.key_points.length > 0 ? (
+            <div className="report-list">
+              <strong>关键要点</strong>
+              <ul>
+                {report.key_points.map((item) => (
+                  <li key={item}>{item}</li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
+          {report.risk_notes && report.risk_notes.length > 0 ? (
+            <div className="report-list">
+              <strong>风险提示</strong>
+              <ul>
+                {report.risk_notes.map((item) => (
+                  <li key={item}>{item}</li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
           {critic?.issues && critic.issues.length > 0 ? (
             <div className="critic warning">
               <AlertTriangle size={18} aria-hidden="true" />
@@ -42,6 +64,18 @@ export function ReportPanel({ result }: { result: AnalysisResult | null }) {
               <span>结论校验完成</span>
             </div>
           )}
+          {critic?.suggestions && critic.suggestions.length > 0 ? (
+            <div className="report-list">
+              <strong>校验建议</strong>
+              <ul>
+                {critic.suggestions.map((item) => (
+                  <li key={item}>{item}</li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
+          {report.llm_error ? <small>大模型报告兜底原因：{report.llm_error}</small> : null}
+          {critic?.llm_error ? <small>大模型校验兜底原因：{critic.llm_error}</small> : null}
           <small>{report.disclaimer}</small>
         </div>
       ) : (

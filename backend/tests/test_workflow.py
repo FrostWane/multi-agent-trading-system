@@ -21,4 +21,5 @@ def test_workflow_runs_all_specialist_agents():
     completed_agents = {agent for agent, status, *_ in events if status == "completed"}
     assert set(AGENT_SEQUENCE) <= completed_agents
     assert result["report"]["summary"]
+    assert result["report"]["llm_enabled"] is False
     assert result["critic"]["passed"] is True

@@ -50,6 +50,7 @@ flowchart LR
 
 - 智能体编排：LangGraph 风格工作流，提供确定性兜底执行器。
 - 后端服务：FastAPI、Pydantic、SSE 事件流。
+- 大模型接入：OpenAI 兼容 `/chat/completions`，未配置 Key 时自动使用规则兜底。
 - RAG 与向量库：Qdrant 优先，本地内存检索作为离线演示兜底。
 - MCP：Python MCP server，将行情、指标、RAG、回测和风险画像封装为工具。
 - 数据源：AkShare 获取 A 股历史行情，样例数据保证测试和演示稳定。
@@ -78,6 +79,30 @@ npm run dev
 ```
 
 打开 `http://localhost:5173`，使用默认股票代码 `000001` 即可运行一次完整分析。
+
+## 大模型配置
+
+系统默认不强制依赖大模型 API。未配置 Key 时，会使用规则引擎完成量化指标、RAG 检索、风险评估、回测、报告生成和校验；配置 Key 后，`Report Agent` 与 `Critic Agent` 会自动切换为大模型增强模式。
+
+OpenAI 示例：
+
+```env
+OPENAI_API_KEY=你的_key
+OPENAI_BASE_URL=https://api.openai.com/v1
+OPENAI_MODEL=gpt-4o-mini
+LLM_TIMEOUT_SECONDS=30
+```
+
+DeepSeek 示例：
+
+```env
+OPENAI_API_KEY=你的_deepseek_key
+OPENAI_BASE_URL=https://api.deepseek.com
+OPENAI_MODEL=deepseek-chat
+LLM_TIMEOUT_SECONDS=30
+```
+
+页面最终报告会显示当前是“规则模式”还是“大模型增强”。
 
 ## Docker Compose
 

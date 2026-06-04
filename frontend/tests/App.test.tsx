@@ -9,6 +9,7 @@ describe("App", () => {
     expect(screen.getByText("智能体流程")).toBeInTheDocument();
     expect(screen.getByText("智能体详情")).toBeInTheDocument();
     expect(screen.getByText("RAG 导入")).toBeInTheDocument();
+    expect(screen.getByText("暂无报告。")).toBeInTheDocument();
     expect(screen.getByLabelText("股票搜索")).toBeInTheDocument();
     expect(screen.getByTitle("开始分析")).toBeInTheDocument();
   });
