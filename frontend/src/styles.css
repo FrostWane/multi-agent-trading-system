@@ -266,6 +266,12 @@ button:disabled {
   margin: 0;
 }
 
+.panel-heading p {
+  color: #64748b;
+  font-size: 12px;
+  margin: 4px 0 0;
+}
+
 .panel-heading span {
   color: #64748b;
   font-size: 12px;
@@ -375,8 +381,79 @@ button:disabled {
   flex: 1;
 }
 
+.kline-frame {
+  height: 380px;
+}
+
 .chart-empty {
   margin: 0;
+}
+
+.kline-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: -4px 0 10px;
+}
+
+.kline-legend span {
+  align-items: center;
+  color: #475569;
+  display: inline-flex;
+  font-size: 12px;
+  gap: 6px;
+}
+
+.kline-legend span::before {
+  border-radius: 999px;
+  content: "";
+  height: 8px;
+  width: 8px;
+}
+
+.legend-rise::before {
+  background: #dc2626;
+}
+
+.legend-fall::before {
+  background: #16a34a;
+}
+
+.legend-ma5::before {
+  background: #f59e0b;
+}
+
+.legend-ma20::before {
+  background: #2563eb;
+}
+
+.kline-tooltip {
+  background: rgb(255 255 255 / 0.97);
+  border: 1px solid #dbe3ef;
+  border-radius: 8px;
+  box-shadow: 0 10px 28px rgb(15 23 42 / 0.12);
+  display: grid;
+  gap: 5px;
+  min-width: 156px;
+  padding: 10px 12px;
+}
+
+.kline-tooltip strong {
+  color: #0f172a;
+  font-size: 13px;
+}
+
+.kline-tooltip span {
+  color: #475569;
+  font-size: 12px;
+}
+
+.kline-tooltip .rise {
+  color: #dc2626;
+}
+
+.kline-tooltip .fall {
+  color: #16a34a;
 }
 
 .agent-detail-grid {
