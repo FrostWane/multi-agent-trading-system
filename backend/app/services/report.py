@@ -19,10 +19,19 @@ def build_report(state: dict) -> dict:
     elif risk_level == "high" or trend == "bearish":
         recommendation = "cautious"
 
+    trend_labels = {
+        "bullish": "偏多",
+        "bearish": "偏空",
+        "neutral": "震荡",
+        "insufficient_data": "数据不足",
+        "unknown": "未知",
+    }
+    risk_labels = {"low": "低", "medium": "中", "high": "高", "unknown": "未知"}
     summary = (
-        f"{request['symbol']} shows {trend} technical momentum with {risk_level} risk. "
-        f"The MA crossover backtest returned {strategy_return:.2%}, versus "
-        f"{benchmark_return:.2%} buy-and-hold over the same period."
+        f"{request['symbol']} 当前技术面呈现{trend_labels.get(trend, trend)}特征，"
+        f"综合风险等级为{risk_labels.get(risk_level, risk_level)}。"
+        f"均线交叉策略在区间内回测收益为 {strategy_return:.2%}，"
+        f"同期买入并持有收益为 {benchmark_return:.2%}。"
     )
 
     citations = [
@@ -46,5 +55,5 @@ def build_report(state: dict) -> dict:
             "research": research,
         },
         "citations": citations,
-        "disclaimer": "This report is for research and education only, not investment advice.",
+        "disclaimer": "本报告仅用于研究和学习，不构成任何投资建议。",
     }

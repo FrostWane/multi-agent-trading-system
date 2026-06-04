@@ -35,13 +35,13 @@ def _emit(
 
 
 def _supervisor_agent(state: AnalysisState, emit: EmitEvent | None) -> AnalysisState:
-    _emit(emit, "Supervisor Agent", "running", "Decomposing the analysis request.")
+    _emit(emit, "Supervisor Agent", "running", "正在拆解分析请求。")
     state["plan"] = AGENT_SEQUENCE[1:]
     _emit(
         emit,
         "Supervisor Agent",
         "completed",
-        "Created a specialist-agent execution plan.",
+        "已生成专业智能体执行计划。",
         {"plan": state["plan"]},
     )
     return state
@@ -49,7 +49,7 @@ def _supervisor_agent(state: AnalysisState, emit: EmitEvent | None) -> AnalysisS
 
 def _market_data_agent(state: AnalysisState, emit: EmitEvent | None) -> AnalysisState:
     request = state["request"]
-    _emit(emit, "Market Data Agent", "running", "Fetching A-share market history.")
+    _emit(emit, "Market Data Agent", "running", "正在获取 A 股历史行情。")
     provider = MarketDataProvider()
     state["market_data"] = provider.get_stock_history(
         symbol=request["symbol"],
@@ -60,20 +60,20 @@ def _market_data_agent(state: AnalysisState, emit: EmitEvent | None) -> Analysis
         emit,
         "Market Data Agent",
         "completed",
-        f"Loaded {len(state['market_data'])} OHLCV rows.",
+        f"已加载 {len(state['market_data'])} 条 OHLCV 行情数据。",
         {"rows": len(state["market_data"])},
     )
     return state
 
 
 def _quant_analyst_agent(state: AnalysisState, emit: EmitEvent | None) -> AnalysisState:
-    _emit(emit, "Quant Analyst Agent", "running", "Calculating trend and momentum factors.")
+    _emit(emit, "Quant Analyst Agent", "running", "正在计算趋势和动量因子。")
     state["indicators"] = summarize_indicators(state.get("market_data", []))
     _emit(
         emit,
         "Quant Analyst Agent",
         "completed",
-        "Generated MA, RSI, MACD, volatility, and drawdown features.",
+        "已生成均线、RSI、MACD、波动率和回撤指标。",
         state["indicators"],
     )
     return state
@@ -81,7 +81,7 @@ def _quant_analyst_agent(state: AnalysisState, emit: EmitEvent | None) -> Analys
 
 def _rag_research_agent(state: AnalysisState, emit: EmitEvent | None) -> AnalysisState:
     request = state["request"]
-    _emit(emit, "RAG Research Agent", "running", "Retrieving market evidence from RAG store.")
+    _emit(emit, "RAG Research Agent", "running", "正在从 RAG 知识库检索市场证据。")
     query = (
         f"{request['symbol']} {state.get('indicators', {}).get('trend', '')} "
         f"risk earnings industry news research"
@@ -91,59 +91,59 @@ def _rag_research_agent(state: AnalysisState, emit: EmitEvent | None) -> Analysi
         emit,
         "RAG Research Agent",
         "completed",
-        f"Retrieved {len(state['research'])} evidence documents.",
+        f"已检索到 {len(state['research'])} 篇证据文档。",
         {"citations": [item["title"] for item in state["research"]]},
     )
     return state
 
 
 def _risk_agent(state: AnalysisState, emit: EmitEvent | None) -> AnalysisState:
-    _emit(emit, "Risk Agent", "running", "Scoring volatility, drawdown, and evidence risk.")
+    _emit(emit, "Risk Agent", "running", "正在评估波动率、回撤和证据风险。")
     state["risk"] = assess_risk(
         state.get("indicators", {}),
         state.get("research", []),
         state["request"].get("risk_preference", "balanced"),
     )
-    _emit(emit, "Risk Agent", "completed", "Produced a risk profile.", state["risk"])
+    _emit(emit, "Risk Agent", "completed", "已生成风险画像。", state["risk"])
     return state
 
 
 def _backtest_agent(state: AnalysisState, emit: EmitEvent | None) -> AnalysisState:
-    _emit(emit, "Backtest Agent", "running", "Running MA crossover strategy backtest.")
+    _emit(emit, "Backtest Agent", "running", "正在执行均线交叉策略回测。")
     state["backtest"] = run_moving_average_backtest(state.get("market_data", []))
     _emit(
         emit,
         "Backtest Agent",
         "completed",
-        "Backtest metrics are ready.",
+        "回测指标已生成。",
         state["backtest"],
     )
     return state
 
 
 def _report_agent(state: AnalysisState, emit: EmitEvent | None) -> AnalysisState:
-    _emit(emit, "Report Agent", "running", "Synthesizing specialist findings.")
+    _emit(emit, "Report Agent", "running", "正在综合各智能体结论。")
     state["report"] = build_report(state)
     _emit(
         emit,
         "Report Agent",
         "completed",
-        "Generated the structured research report.",
+        "已生成结构化研究报告。",
         {"recommendation": state["report"]["recommendation"]},
     )
     return state
 
 
 def _critic_agent(state: AnalysisState, emit: EmitEvent | None) -> AnalysisState:
-    _emit(emit, "Critic Agent", "running", "Validating report confidence and citations.")
+    _emit(emit, "Critic Agent", "running", "正在校验报告置信度和引用完整性。")
     report = state.get("report", {})
     issues: list[str] = []
     if not state.get("market_data"):
-        issues.append("market data is missing")
+        issues.append("缺少行情数据")
     if not report.get("citations"):
-        issues.append("RAG citations are missing")
+        issues.append("缺少 RAG 引用证据")
     if state.get("risk", {}).get("level") == "high" and report.get("recommendation") != "cautious":
-        issues.append("high risk should produce a cautious recommendation")
+        issues.append("高风险场景应给出谨慎建议")
 
     state["critic"] = {
         "passed": not issues,
@@ -154,7 +154,7 @@ def _critic_agent(state: AnalysisState, emit: EmitEvent | None) -> AnalysisState
         emit,
         "Critic Agent",
         "completed",
-        "Review completed." if not issues else "Review found issues.",
+        "校验完成。" if not issues else "校验发现问题。",
         state["critic"],
     )
     return state

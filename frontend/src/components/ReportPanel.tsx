@@ -1,23 +1,35 @@
 import { BadgeCheck, AlertTriangle } from "lucide-react";
 import type { AnalysisResult } from "../types/analysis";
 
+const RECOMMENDATION_LABELS: Record<string, string> = {
+  watchlist_positive: "积极关注",
+  cautious: "谨慎观察",
+  neutral: "中性"
+};
+
+const CONFIDENCE_LABELS: Record<string, string> = {
+  high: "高",
+  medium: "中",
+  low: "低"
+};
+
 export function ReportPanel({ result }: { result: AnalysisResult | null }) {
   const report = result?.report;
   const critic = result?.critic;
 
   return (
-    <section className="panel report-panel" aria-label="Final report">
+    <section className="panel report-panel" aria-label="最终报告">
       <div className="panel-heading">
-        <h2>Report</h2>
-        <span>{result?.engine ?? "idle"}</span>
+        <h2>最终报告</h2>
+        <span>{result?.engine ?? "待机"}</span>
       </div>
       {report?.summary ? (
         <div className="report-body">
           <p>{report.summary}</p>
           <div className="report-tags">
-            <span>{report.recommendation}</span>
-            <span>{critic?.confidence ?? "pending"} confidence</span>
-            <span>{critic?.passed ? "critic passed" : "critic pending"}</span>
+            <span>{RECOMMENDATION_LABELS[report.recommendation ?? ""] ?? report.recommendation}</span>
+            <span>置信度 {CONFIDENCE_LABELS[critic?.confidence ?? ""] ?? "待定"}</span>
+            <span>{critic?.passed ? "校验通过" : "等待校验"}</span>
           </div>
           {critic?.issues && critic.issues.length > 0 ? (
             <div className="critic warning">
@@ -27,13 +39,13 @@ export function ReportPanel({ result }: { result: AnalysisResult | null }) {
           ) : (
             <div className="critic">
               <BadgeCheck size={18} aria-hidden="true" />
-              <span>Validation complete</span>
+              <span>结论校验完成</span>
             </div>
           )}
           <small>{report.disclaimer}</small>
         </div>
       ) : (
-        <p className="empty">No report yet.</p>
+        <p className="empty">暂无报告。</p>
       )}
     </section>
   );

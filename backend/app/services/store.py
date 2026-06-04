@@ -27,7 +27,7 @@ class AnalysisStore:
                 "result": None,
                 "error": None,
             }
-        self.add_event(run_id, "Supervisor Agent", "queued", "Analysis request accepted.")
+        self.add_event(run_id, "Supervisor Agent", "queued", "分析请求已接收。")
         return run_id
 
     def set_status(self, run_id: str, status: str, error: str | None = None) -> None:

@@ -11,14 +11,14 @@ import type { PricePoint } from "../types/analysis";
 
 export function PriceChart({ data }: { data: PricePoint[] }) {
   return (
-    <section className="panel chart-panel" aria-label="Price chart">
+    <section className="panel chart-panel" aria-label="价格走势">
       <div className="panel-heading">
-        <h2>Price</h2>
-        <span>{data.length} points</span>
+        <h2>价格走势</h2>
+        <span>{data.length} 个点位</span>
       </div>
       <div className="chart-frame">
         {data.length === 0 ? (
-          <p className="empty chart-empty">No price data yet.</p>
+          <p className="empty chart-empty">暂无价格数据。</p>
         ) : (
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={data}>

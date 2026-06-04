@@ -26,6 +26,13 @@ export function App() {
 
   const result = snapshot?.result ?? null;
   const status = snapshot?.status ?? (loading ? "running" : "idle");
+  const statusText: Record<string, string> = {
+    idle: "待机",
+    queued: "排队中",
+    running: "分析中",
+    completed: "已完成",
+    failed: "失败"
+  };
 
   const latestEvents = useMemo(() => {
     const byKey = new Map<string, AgentEvent>();
@@ -64,7 +71,7 @@ export function App() {
       const response = await submitAnalysis(form);
       setRunId(response.run_id);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Request failed");
+      setError(err instanceof Error ? err.message : "请求失败");
       setLoading(false);
     }
   }
@@ -78,16 +85,16 @@ export function App() {
     <main className="app-shell">
       <header className="topbar">
         <div>
-          <h1>Multi-Agent Trading System</h1>
-          <p>A-share research workspace</p>
+          <h1>多智能体量化分析系统</h1>
+          <p>A 股研究工作台</p>
         </div>
-        <div className={`status-pill ${status}`}>{status}</div>
+        <div className={`status-pill ${status}`}>{statusText[status] ?? status}</div>
       </header>
 
       <section className="workspace">
         <form className="control-panel" onSubmit={handleSubmit}>
           <label>
-            Symbol
+            股票代码
             <input
               value={form.symbol}
               maxLength={9}
@@ -95,7 +102,7 @@ export function App() {
             />
           </label>
           <label>
-            Start
+            开始日期
             <input
               type="date"
               value={form.start_date}
@@ -103,7 +110,7 @@ export function App() {
             />
           </label>
           <label>
-            End
+            结束日期
             <input
               type="date"
               value={form.end_date}
@@ -111,7 +118,7 @@ export function App() {
             />
           </label>
           <label>
-            Horizon
+            分析周期
             <select value={form.horizon} onChange={(event) => setForm({ ...form, horizon: event.target.value })}>
               <option value="1w">1w</option>
               <option value="1m">1m</option>
@@ -119,26 +126,26 @@ export function App() {
             </select>
           </label>
           <label>
-            Risk
+            风险偏好
             <select
               value={form.risk_preference}
               onChange={(event) =>
                 setForm({ ...form, risk_preference: event.target.value as AnalyzeRequest["risk_preference"] })
               }
             >
-              <option value="conservative">conservative</option>
-              <option value="balanced">balanced</option>
-              <option value="aggressive">aggressive</option>
+              <option value="conservative">稳健</option>
+              <option value="balanced">均衡</option>
+              <option value="aggressive">进取</option>
             </select>
           </label>
           <div className="actions">
-            <button type="submit" disabled={loading} title="Run analysis">
+            <button type="submit" disabled={loading} title="开始分析">
               <Play size={17} aria-hidden="true" />
-              Run
+              分析
             </button>
-            <button type="button" onClick={refresh} disabled={!runId} title="Refresh snapshot">
+            <button type="button" onClick={refresh} disabled={!runId} title="刷新结果">
               <RefreshCw size={17} aria-hidden="true" />
-              Refresh
+              刷新
             </button>
           </div>
           {error ? <p className="error">{error}</p> : null}

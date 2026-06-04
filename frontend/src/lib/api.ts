@@ -9,7 +9,7 @@ export async function submitAnalysis(payload: AnalyzeRequest): Promise<{ run_id:
     body: JSON.stringify(payload)
   });
   if (!response.ok) {
-    throw new Error(`Analysis request failed: ${response.status}`);
+    throw new Error(`分析请求失败：${response.status}`);
   }
   return response.json();
 }
@@ -17,7 +17,7 @@ export async function submitAnalysis(payload: AnalyzeRequest): Promise<{ run_id:
 export async function fetchAnalysis(runId: string): Promise<AnalysisSnapshot> {
   const response = await fetch(`${API_BASE}/api/analysis/${runId}`);
   if (!response.ok) {
-    throw new Error(`Snapshot request failed: ${response.status}`);
+    throw new Error(`结果查询失败：${response.status}`);
   }
   return response.json();
 }
