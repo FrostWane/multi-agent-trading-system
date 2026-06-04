@@ -1,56 +1,64 @@
-# Multi-Agent Trading System
+# 多智能体量化股票分析系统
 
-多智能体协作的 A 股量化研究平台。项目把行情数据、技术指标、RAG 证据检索、风险评估、策略回测、报告生成和结论校验拆成多个专业 Agent，用 LangGraph 编排共享状态，前端实时展示每个 Agent 的执行轨迹。
+`multi-agent-trading-system` 是一个面向简历展示的 A 股量化研究平台。项目把行情数据、技术指标、RAG 证据检索、风险评估、策略回测、报告生成和结论校验拆分为多个专业智能体，并通过 LangGraph 风格的共享状态工作流进行编排。前端工作台会实时展示每个智能体的执行轨迹、阶段产出、引用证据和最终研究报告。
 
-> This project is for research and education only. It is not investment advice and does not provide live trading.
+> 本项目仅用于研究、学习和工程能力展示，不构成任何投资建议，也不提供实盘交易能力。
 
-## Architecture
+## 语言约定
+
+- 项目 README、演示汇报、分析报告和前端界面默认使用中文。
+- 后端接口字段、环境变量、目录名和代码标识符保留英文，方便工程协作和开源维护。
+- 面试或答辩时，建议用中文讲清业务闭环，用英文技术名词标识核心组件，例如 LangGraph、RAG、MCP、Qdrant、Docker 和 Kubernetes。
+
+## 架构设计
 
 ```mermaid
 flowchart LR
-  UI[React Workbench] --> API[FastAPI API]
-  API --> Graph[LangGraph AnalysisState]
-  Graph --> Supervisor[Supervisor Agent]
-  Supervisor --> Data[Market Data Agent]
-  Data --> Quant[Quant Analyst Agent]
-  Quant --> Research[RAG Research Agent]
-  Research --> Risk[Risk Agent]
-  Risk --> Backtest[Backtest Agent]
-  Backtest --> Report[Report Agent]
-  Report --> Critic[Critic Agent]
-  Data --> MCP[MCP Tools]
+  UI[React 前端工作台] --> API[FastAPI 后端 API]
+  API --> Graph[LangGraph 共享状态 AnalysisState]
+  Graph --> Supervisor[调度智能体]
+  Supervisor --> Data[行情数据智能体]
+  Data --> Quant[量化分析智能体]
+  Quant --> Research[RAG 研究智能体]
+  Research --> Risk[风险评估智能体]
+  Risk --> Backtest[策略回测智能体]
+  Backtest --> Report[报告生成智能体]
+  Report --> Critic[结论校验智能体]
+  Data --> MCP[MCP 工具层]
   Quant --> MCP
   Backtest --> MCP
-  Research --> Qdrant[(Qdrant Vector DB)]
-  MCP --> AkShare[AkShare A-share Data]
+  Research --> Qdrant[(Qdrant 向量数据库)]
+  MCP --> AkShare[AkShare A 股数据]
 ```
 
-## Multi-Agent Workflow
+## 多智能体协作流程
 
-The backend exposes a specialist-agent workflow:
+后端提供一条专业智能体协作链路：
 
-- `Supervisor Agent`: accepts the request and creates an execution plan.
-- `Market Data Agent`: fetches A-share OHLCV data through AkShare with deterministic sample fallback.
-- `Quant Analyst Agent`: calculates MA, RSI, MACD, volatility, drawdown, and trend features.
-- `RAG Research Agent`: retrieves market evidence from the RAG store and returns citations.
-- `Risk Agent`: scores volatility, drawdown, sentiment, and user risk preference.
-- `Backtest Agent`: runs a moving-average crossover strategy.
-- `Report Agent`: synthesizes a structured research report.
-- `Critic Agent`: validates confidence, missing data, and citation coverage.
+- `Supervisor Agent`：接收用户分析请求，拆解任务并生成执行计划。
+- `Market Data Agent`：通过 AkShare 获取 A 股 OHLCV 历史行情，失败时使用确定性样例数据兜底。
+- `Quant Analyst Agent`：计算均线、RSI、MACD、年化波动率、最大回撤和趋势特征。
+- `RAG Research Agent`：从 RAG 知识库检索市场证据，并返回可追溯引用。
+- `Risk Agent`：结合波动率、回撤、证据情绪和用户风险偏好生成风险画像。
+- `Backtest Agent`：执行均线交叉策略回测，输出收益、回撤、胜率和交易次数。
+- `Report Agent`：整合各智能体产出，生成结构化中文研究报告。
+- `Critic Agent`：校验报告置信度、数据完整性和引用覆盖情况。
 
-The frontend shows this chain in the `Agent Flow` panel through the `/api/analysis/{run_id}/events` SSE stream.
+前端通过 `/api/analysis/{run_id}/events` 的 SSE 事件流，在“智能体流程”面板中实时展示这条协作链路。
 
-## Tech Stack
+## 技术栈
 
-- Agent orchestration: LangGraph with a deterministic fallback runner.
-- API: FastAPI, Pydantic, Server-Sent Events.
-- RAG/vector store: Qdrant-ready design with local in-memory fallback for v1 demos.
-- MCP: Python MCP server exposing market-analysis tools.
-- Data: AkShare for A-share history, sample data fallback for stable demos/tests.
-- Frontend: React, Vite, TypeScript, Recharts, lucide-react.
-- Infra: Docker Compose and Kubernetes manifests.
+- 智能体编排：LangGraph 风格工作流，提供确定性兜底执行器。
+- 后端服务：FastAPI、Pydantic、SSE 事件流。
+- RAG 与向量库：Qdrant 优先，本地内存检索作为离线演示兜底。
+- MCP：Python MCP server，将行情、指标、RAG、回测和风险画像封装为工具。
+- 数据源：AkShare 获取 A 股历史行情，样例数据保证测试和演示稳定。
+- 前端：React、Vite、TypeScript、Recharts、lucide-react。
+- 工程化：Docker Compose、本地开发脚本、Kubernetes 部署清单。
 
-## Quick Start
+## 快速启动
+
+后端：
 
 ```powershell
 cp .env.example .env
@@ -61,7 +69,7 @@ pip install -e ".[dev]"
 uvicorn app.main:app --reload --port 8000
 ```
 
-In another terminal:
+另开一个终端启动前端：
 
 ```powershell
 cd frontend
@@ -69,7 +77,7 @@ npm install
 npm run dev
 ```
 
-Open `http://localhost:5173` and run the default `000001` analysis.
+打开 `http://localhost:5173`，使用默认股票代码 `000001` 即可运行一次完整分析。
 
 ## Docker Compose
 
@@ -78,11 +86,11 @@ cp .env.example .env
 docker compose up --build
 ```
 
-- Frontend: `http://localhost:8080`
-- Backend: `http://localhost:8000`
-- Qdrant: `http://localhost:6333`
+- 前端：`http://localhost:8080`
+- 后端：`http://localhost:8000`
+- Qdrant：`http://localhost:6333`
 
-## Public API
+## API 接口
 
 ```http
 POST /api/analyze
@@ -92,7 +100,7 @@ GET  /api/stocks/search?q=000001
 POST /api/rag/ingest
 ```
 
-Example request:
+示例请求：
 
 ```json
 {
@@ -104,35 +112,35 @@ Example request:
 }
 ```
 
-## MCP Tools
+## MCP 工具
 
-Run the MCP server:
+启动 MCP 服务：
 
 ```powershell
 cd backend
 python -m app.mcp_server.server
 ```
 
-Exposed tools:
+当前暴露的工具：
 
-- `get_stock_history`
-- `calculate_indicators`
-- `search_market_research`
-- `run_backtest`
-- `generate_risk_profile`
+- `get_stock_history`：获取 A 股历史行情。
+- `calculate_indicators`：计算技术指标。
+- `search_market_research`：检索 RAG 市场证据。
+- `run_backtest`：执行默认均线交叉策略回测。
+- `generate_risk_profile`：生成风险画像。
 
 ## Kubernetes
 
-The K8s manifests are under `infra/k8s`.
+K8s 清单位于 `infra/k8s`。
 
 ```powershell
 kubectl kustomize infra/k8s
 kubectl apply -k infra/k8s
 ```
 
-Before real deployment, replace `infra/k8s/secret.example.yaml` with a real secret and push backend/frontend images matching the names in the manifests.
+真实部署前，需要将 `infra/k8s/secret.example.yaml` 替换为真实 Secret，并推送与清单中镜像名匹配的后端和前端镜像。
 
-## Tests
+## 测试
 
 ```powershell
 cd backend
@@ -143,9 +151,15 @@ npm test
 npm run test:e2e
 ```
 
-## Resume Bullets
+## 简历描述示例
 
-- Built a multi-agent A-share quantitative research platform with FastAPI, LangGraph, React, Qdrant, MCP, Docker, and Kubernetes manifests.
-- Designed a Supervisor-led Agent workflow that decomposes stock analysis into market data, quantitative indicators, RAG evidence retrieval, risk scoring, backtesting, report generation, and critic validation.
-- Implemented SSE-based Agent execution tracing so the frontend can visualize specialist Agent status, outputs, citations, and final research reports in real time.
-- Added AkShare data integration with deterministic sample fallback, pytest/Vitest/Playwright coverage, Docker Compose local deployment, and K8s deployment manifests.
+- 基于 FastAPI、LangGraph、React、Qdrant、MCP、Docker 和 Kubernetes 构建多智能体 A 股量化研究平台。
+- 设计 Supervisor 驱动的多智能体工作流，将股票分析拆分为行情采集、量化指标计算、RAG 证据检索、风险评分、策略回测、报告生成和结论校验。
+- 实现基于 SSE 的智能体执行轨迹推送，使前端能够实时展示各专业智能体的状态、产出、引用证据和最终中文研究报告。
+- 接入 AkShare A 股数据源，并提供确定性样例数据兜底；补充 pytest、Vitest、Playwright 测试，以及 Docker Compose 和 K8s 部署清单。
+
+## 当前状态
+
+- 后端已支持完整分析链路和中文报告生成。
+- 前端已支持中文工作台、智能体流程展示、指标面板、RAG 证据和最终报告展示。
+- Docker Compose 可用于本地一键启动，K8s manifests 可用于部署展示和面试讲解。
