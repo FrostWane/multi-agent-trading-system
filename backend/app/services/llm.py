@@ -9,7 +9,11 @@ from app.core.config import settings
 
 
 def llm_available() -> bool:
-    return bool(settings.openai_api_key and settings.openai_api_key != "replace-me")
+    return bool(
+        settings.llm_enabled
+        and settings.openai_api_key
+        and settings.openai_api_key != "replace-me"
+    )
 
 
 class LLMError(RuntimeError):
@@ -34,23 +38,26 @@ class OpenAICompatibleLLM:
         if not llm_available():
             raise LLMError("未配置大模型 API Key")
 
-        response = httpx.post(
-            f"{self.base_url}/chat/completions",
-            headers={
-                "Authorization": f"Bearer {self.api_key}",
-                "Content-Type": "application/json",
-            },
-            json={
-                "model": self.model,
-                "temperature": temperature,
-                "response_format": {"type": "json_object"},
-                "messages": [
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": json.dumps(user_payload, ensure_ascii=False)},
-                ],
-            },
-            timeout=self.timeout,
-        )
+        try:
+            response = httpx.post(
+                f"{self.base_url}/chat/completions",
+                headers={
+                    "Authorization": f"Bearer {self.api_key}",
+                    "Content-Type": "application/json",
+                },
+                json={
+                    "model": self.model,
+                    "temperature": temperature,
+                    "response_format": {"type": "json_object"},
+                    "messages": [
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user", "content": json.dumps(user_payload, ensure_ascii=False)},
+                    ],
+                },
+                timeout=self.timeout,
+            )
+        except httpx.HTTPError as exc:
+            raise LLMError(f"大模型请求异常：{exc}") from exc
         if response.status_code >= 400:
             raise LLMError(f"大模型请求失败：{response.status_code} {response.text[:300]}")
 

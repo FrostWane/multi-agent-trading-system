@@ -98,8 +98,8 @@ DeepSeek 示例：
 ```env
 OPENAI_API_KEY=你的_deepseek_key
 OPENAI_BASE_URL=https://api.deepseek.com
-OPENAI_MODEL=deepseek-chat
-LLM_TIMEOUT_SECONDS=30
+OPENAI_MODEL=deepseek-v4-flash
+LLM_TIMEOUT_SECONDS=60
 ```
 
 页面最终报告会显示当前是“规则模式”还是“大模型增强”。

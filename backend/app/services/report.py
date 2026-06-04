@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from app.services.llm import LLMError, llm_client, llm_available
+from app.services.llm import llm_client, llm_available
 
 
 def build_report(state: dict) -> dict:
@@ -101,7 +101,7 @@ def build_llm_report(state: dict[str, Any]) -> dict[str, Any]:
     )
     try:
         llm_result = llm_client.chat_json(prompt, _compact_state_for_llm(state))
-    except LLMError as exc:
+    except Exception as exc:
         rule_report["llm_enabled"] = False
         rule_report["llm_error"] = str(exc)
         return rule_report
@@ -140,7 +140,7 @@ def review_report_with_llm(state: dict[str, Any], rule_review: dict[str, Any]) -
     }
     try:
         llm_result = llm_client.chat_json(prompt, payload, temperature=0.1)
-    except LLMError as exc:
+    except Exception as exc:
         review = dict(rule_review)
         review["llm_enabled"] = False
         review["llm_error"] = str(exc)
