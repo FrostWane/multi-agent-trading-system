@@ -30,7 +30,15 @@ function latestByAgent(events: AgentEvent[]) {
   });
 }
 
-export function AgentTimeline({ events }: { events: AgentEvent[] }) {
+export function AgentTimeline({
+  events,
+  selectedAgent,
+  onSelectAgent
+}: {
+  events: AgentEvent[];
+  selectedAgent: string;
+  onSelectAgent: (agent: string) => void;
+}) {
   return (
     <section className="panel timeline-panel" aria-label="智能体执行流程">
       <div className="panel-heading">
@@ -43,12 +51,14 @@ export function AgentTimeline({ events }: { events: AgentEvent[] }) {
           const Icon =
             status === "completed" ? CheckCircle2 : status === "failed" ? XCircle : status === "running" ? Loader2 : CircleDot;
           return (
-            <li className={`agent-step ${status}`} key={agent}>
-              <Icon className={status === "running" ? "spin" : ""} size={18} aria-hidden="true" />
-              <div>
-                <strong>{AGENT_LABELS[agent] ?? agent}</strong>
-                <p>{event?.message ?? "等待上游智能体输出。"}</p>
-              </div>
+            <li className={`agent-step ${status} ${selectedAgent === agent ? "selected" : ""}`} key={agent}>
+              <button type="button" onClick={() => onSelectAgent(agent)}>
+                <Icon className={status === "running" ? "spin" : ""} size={18} aria-hidden="true" />
+                <div>
+                  <strong>{AGENT_LABELS[agent] ?? agent}</strong>
+                  <p>{event?.message ?? "等待上游智能体输出。"}</p>
+                </div>
+              </button>
             </li>
           );
         })}

@@ -7,6 +7,9 @@ describe("App", () => {
     render(<App />);
     expect(screen.getByText("多智能体量化分析系统")).toBeInTheDocument();
     expect(screen.getByText("智能体流程")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /分析/i })).toBeInTheDocument();
+    expect(screen.getByText("智能体详情")).toBeInTheDocument();
+    expect(screen.getByText("RAG 导入")).toBeInTheDocument();
+    expect(screen.getByLabelText("股票搜索")).toBeInTheDocument();
+    expect(screen.getByTitle("开始分析")).toBeInTheDocument();
   });
 });

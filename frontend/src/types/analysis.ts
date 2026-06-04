@@ -17,6 +17,20 @@ export interface AnalyzeRequest {
   risk_preference: "conservative" | "balanced" | "aggressive";
 }
 
+export interface StockOption {
+  symbol: string;
+  name: string;
+  market: string;
+}
+
+export interface RagIngestPayload {
+  symbol: string;
+  title: string;
+  source: string;
+  doc_type: string;
+  content: string;
+}
+
 export interface AnalysisSnapshot {
   run_id: string;
   status: "queued" | "running" | "completed" | "failed";

@@ -1,10 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
 import { Play, RefreshCw } from "lucide-react";
+import { AgentDetailPanel } from "./components/AgentDetailPanel";
 import { AgentTimeline } from "./components/AgentTimeline";
 import { EvidencePanel } from "./components/EvidencePanel";
 import { MetricGrid } from "./components/MetricGrid";
 import { PriceChart } from "./components/PriceChart";
+import { RagIngestPanel } from "./components/RagIngestPanel";
 import { ReportPanel } from "./components/ReportPanel";
+import { StockSearch } from "./components/StockSearch";
 import { eventsUrl, fetchAnalysis, submitAnalysis } from "./lib/api";
 import type { AgentEvent, AnalysisSnapshot, AnalyzeRequest } from "./types/analysis";
 
@@ -21,6 +24,7 @@ export function App() {
   const [runId, setRunId] = useState<string>("");
   const [snapshot, setSnapshot] = useState<AnalysisSnapshot | null>(null);
   const [events, setEvents] = useState<AgentEvent[]>([]);
+  const [selectedAgent, setSelectedAgent] = useState("Supervisor Agent");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -93,6 +97,10 @@ export function App() {
 
       <section className="workspace">
         <form className="control-panel" onSubmit={handleSubmit}>
+          <StockSearch
+            value={form.symbol}
+            onSelect={(stock) => setForm((current) => ({ ...current, symbol: stock.symbol }))}
+          />
           <label>
             股票代码
             <input
@@ -152,8 +160,10 @@ export function App() {
         </form>
 
         <MetricGrid result={result} />
-        <AgentTimeline events={latestEvents} />
+        <AgentTimeline events={latestEvents} selectedAgent={selectedAgent} onSelectAgent={setSelectedAgent} />
+        <AgentDetailPanel events={latestEvents} selectedAgent={selectedAgent} />
         <PriceChart data={result?.market_data_preview ?? []} />
+        <RagIngestPanel symbol={form.symbol} />
         <EvidencePanel research={result?.research ?? []} />
         <ReportPanel result={result} />
       </section>
