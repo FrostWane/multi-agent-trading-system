@@ -1,6 +1,8 @@
 from __future__ import annotations
 
-from app.services.backtest import run_moving_average_backtest
+from typing import Optional
+
+from app.services.backtest import run_moving_average_backtest, run_strategy_comparison
 from app.services.data_provider import MarketDataProvider
 from app.services.indicators import summarize_indicators
 from app.services.rag import search_market_docs
@@ -35,6 +37,11 @@ if FastMCP is not None:
     def run_backtest(history: list[dict]) -> dict:
         """Run the default moving-average crossover backtest."""
         return run_moving_average_backtest(history)
+
+    @mcp.tool()
+    def compare_backtest_strategies(history: list[dict], config: Optional[dict] = None) -> dict:
+        """Compare buy-hold, MA crossover, momentum, and RSI reversal strategies."""
+        return run_strategy_comparison(history, config or {})
 
     @mcp.tool()
     def generate_risk_profile(indicators: dict, research: list[dict], preference: str = "balanced") -> dict:

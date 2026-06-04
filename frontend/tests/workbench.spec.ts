@@ -6,5 +6,6 @@ test("shows core workbench panels", async ({ page }) => {
   await expect(page.getByLabel("智能体执行流程")).toBeVisible();
   await expect(page.getByLabel("智能体详情")).toBeVisible();
   await expect(page.getByLabel("RAG 文档导入")).toBeVisible();
+  await expect(page.getByLabel("策略回测对比")).toBeVisible();
   await expect(page.getByLabel("分析指标")).toBeVisible();
 });

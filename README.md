@@ -54,6 +54,7 @@ flowchart LR
 - RAG 与向量库：Qdrant 优先，本地内存检索作为离线演示兜底。
 - MCP：Python MCP server，将行情、指标、RAG、回测和风险画像封装为工具。
 - 数据源：AkShare 获取 A 股历史行情，样例数据保证测试和演示稳定。
+- 策略回测：支持买入持有、均线交叉、动量策略、RSI 反转的对比评估。
 - 前端：React、Vite、TypeScript、Recharts、lucide-react。
 - 工程化：Docker Compose、本地开发脚本、Kubernetes 部署清单。
 
@@ -133,7 +134,18 @@ POST /api/rag/ingest
   "start_date": "2026-01-01",
   "end_date": "2026-06-04",
   "horizon": "1m",
-  "risk_preference": "balanced"
+  "risk_preference": "balanced",
+  "backtest_config": {
+    "strategy_set": "compare_all",
+    "short_window": 5,
+    "long_window": 20,
+    "momentum_window": 20,
+    "rsi_window": 14,
+    "rsi_buy_threshold": 30,
+    "rsi_sell_threshold": 70,
+    "initial_cash": 100000,
+    "fee_rate": 0.0003
+  }
 }
 ```
 
@@ -186,5 +198,5 @@ npm run test:e2e
 ## 当前状态
 
 - 后端已支持完整分析链路和中文报告生成。
-- 前端已支持中文工作台、智能体流程展示、指标面板、RAG 证据和最终报告展示。
+- 前端已支持中文工作台、智能体流程展示、指标面板、专业 K 线、多策略回测对比、RAG 证据和最终报告展示。
 - Docker Compose 可用于本地一键启动，K8s manifests 可用于部署展示和面试讲解。

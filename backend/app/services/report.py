@@ -16,6 +16,7 @@ def build_report(state: dict) -> dict:
     risk_level = risk.get("level", "unknown")
     strategy_return = backtest.get("total_return", 0)
     benchmark_return = backtest.get("benchmark_return", 0)
+    strategy_label = backtest.get("best_strategy_label") or backtest.get("strategy_label") or "策略"
 
     recommendation = "neutral"
     if trend == "bullish" and risk_level != "high" and strategy_return >= benchmark_return:
@@ -34,7 +35,7 @@ def build_report(state: dict) -> dict:
     summary = (
         f"{request['symbol']} 当前技术面呈现{trend_labels.get(trend, trend)}特征，"
         f"综合风险等级为{risk_labels.get(risk_level, risk_level)}。"
-        f"均线交叉策略在区间内回测收益为 {strategy_return:.2%}，"
+        f"回测中表现较好的{strategy_label}区间收益为 {strategy_return:.2%}，"
         f"同期买入并持有收益为 {benchmark_return:.2%}。"
     )
 
@@ -95,7 +96,8 @@ def build_llm_report(state: dict[str, Any]) -> dict[str, Any]:
 
     prompt = (
         "你是一个严谨的 A 股量化研究智能体。请基于输入 JSON 生成中文研究报告，"
-        "必须保留可追溯引用，不得编造数据，不得给出确定性投资承诺。"
+        "必须比较 backtest.strategies 中各策略的收益、回撤、夏普和胜率，"
+        "说明最佳策略是否跑赢买入持有；必须保留可追溯引用，不得编造数据，不得给出确定性投资承诺。"
         "仅输出 JSON，字段包括 summary、recommendation、llm_commentary、key_points、risk_notes。"
         "recommendation 只能是 watchlist_positive、neutral、cautious 三者之一。"
     )

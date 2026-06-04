@@ -110,6 +110,20 @@ textarea {
   gap: 6px;
 }
 
+.form-section {
+  border-top: 1px solid #e2e8f0;
+  display: grid;
+  gap: 12px;
+  padding-top: 12px;
+}
+
+.form-section h2 {
+  color: #0f172a;
+  font-size: 14px;
+  letter-spacing: 0;
+  margin: 0;
+}
+
 .control-panel input,
 .control-panel select,
 .rag-form input,
@@ -285,6 +299,7 @@ button:disabled {
 
 .chart-panel,
 .report-panel,
+.backtest-panel,
 .agent-detail-panel {
   grid-column: span 2;
 }
@@ -548,6 +563,84 @@ button:disabled {
   grid-template-columns: 1fr 1fr;
 }
 
+.two-col.compact {
+  gap: 8px;
+}
+
+.backtest-summary {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin-bottom: 12px;
+}
+
+.backtest-summary div {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  display: grid;
+  gap: 6px;
+  min-height: 74px;
+  padding: 10px;
+}
+
+.backtest-summary span {
+  color: #64748b;
+  font-size: 12px;
+}
+
+.backtest-summary strong {
+  color: #0f172a;
+  font-size: 17px;
+  overflow-wrap: anywhere;
+}
+
+.backtest-chart {
+  align-items: center;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  display: flex;
+  height: 230px;
+  justify-content: center;
+  margin-bottom: 12px;
+  padding: 8px;
+}
+
+.strategy-table-wrap {
+  overflow-x: auto;
+}
+
+.strategy-table {
+  border-collapse: collapse;
+  font-size: 12px;
+  min-width: 640px;
+  width: 100%;
+}
+
+.strategy-table th,
+.strategy-table td {
+  border-bottom: 1px solid #e2e8f0;
+  padding: 8px;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.strategy-table th:first-child,
+.strategy-table td:first-child {
+  text-align: left;
+}
+
+.strategy-table th {
+  color: #64748b;
+  font-weight: 600;
+}
+
+.strategy-table tr.best td {
+  background: #eff6ff;
+  color: #1d4ed8;
+  font-weight: 600;
+}
+
 .evidence-list {
   display: grid;
   gap: 12px;
@@ -694,6 +787,7 @@ button:disabled {
   .timeline-panel,
   .agent-detail-panel,
   .chart-panel,
+  .backtest-panel,
   .rag-ingest-panel,
   .evidence-panel,
   .report-panel {

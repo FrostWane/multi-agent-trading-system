@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Any
 
 from app.agents.state import AnalysisState, EmitEvent
-from app.services.backtest import run_moving_average_backtest
+from app.services.backtest import run_strategy_comparison
 from app.services.data_provider import MarketDataProvider
 from app.services.indicators import summarize_indicators
 from app.services.rag import search_market_docs
@@ -110,14 +110,21 @@ def _risk_agent(state: AnalysisState, emit: EmitEvent | None) -> AnalysisState:
 
 
 def _backtest_agent(state: AnalysisState, emit: EmitEvent | None) -> AnalysisState:
-    _emit(emit, "Backtest Agent", "running", "正在执行均线交叉策略回测。")
-    state["backtest"] = run_moving_average_backtest(state.get("market_data", []))
+    _emit(emit, "Backtest Agent", "running", "正在执行多策略回测对比。")
+    state["backtest"] = run_strategy_comparison(
+        state.get("market_data", []),
+        state["request"].get("backtest_config", {}),
+    )
     _emit(
         emit,
         "Backtest Agent",
         "completed",
-        "回测指标已生成。",
-        state["backtest"],
+        "多策略回测指标已生成。",
+        {
+            "best_strategy": state["backtest"].get("best_strategy_label"),
+            "total_return": state["backtest"].get("total_return"),
+            "strategy_count": len(state["backtest"].get("strategies", [])),
+        },
     )
     return state
 

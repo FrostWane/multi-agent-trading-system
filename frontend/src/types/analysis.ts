@@ -15,6 +15,19 @@ export interface AnalyzeRequest {
   end_date: string;
   horizon: string;
   risk_preference: "conservative" | "balanced" | "aggressive";
+  backtest_config: BacktestConfig;
+}
+
+export interface BacktestConfig {
+  strategy_set: "compare_all" | "ma_cross" | "momentum" | "rsi_reversal";
+  short_window: number;
+  long_window: number;
+  momentum_window: number;
+  rsi_window: number;
+  rsi_buy_threshold: number;
+  rsi_sell_threshold: number;
+  initial_cash: number;
+  fee_rate: number;
 }
 
 export interface StockOption {
@@ -52,11 +65,22 @@ export interface AnalysisResult {
     reasons?: string[];
   };
   backtest: {
+    strategy?: string;
+    strategy_label?: string;
+    best_strategy?: string;
+    best_strategy_label?: string;
+    selected_strategy?: string;
+    parameters?: BacktestConfig;
     total_return?: number;
+    annualized_return?: number;
     benchmark_return?: number;
     max_drawdown?: number;
+    sharpe?: number;
     win_rate?: number;
     trades?: number;
+    final_equity?: number;
+    equity_curve?: EquityPoint[];
+    strategies?: BacktestStrategy[];
   };
   report: {
     summary?: string;
@@ -86,6 +110,27 @@ export interface PricePoint {
   low: number;
   close: number;
   volume: number;
+}
+
+export interface EquityPoint {
+  date: string;
+  equity: number;
+  benchmark: number;
+}
+
+export interface BacktestStrategy {
+  strategy: string;
+  label: string;
+  parameters: Record<string, unknown>;
+  total_return: number;
+  annualized_return: number;
+  benchmark_return: number;
+  max_drawdown: number;
+  sharpe: number;
+  win_rate: number;
+  trades: number;
+  final_equity: number;
+  equity_curve: EquityPoint[];
 }
 
 export interface ResearchItem {

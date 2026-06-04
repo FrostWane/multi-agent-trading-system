@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Play, RefreshCw } from "lucide-react";
 import { AgentDetailPanel } from "./components/AgentDetailPanel";
 import { AgentTimeline } from "./components/AgentTimeline";
+import { BacktestPanel } from "./components/BacktestPanel";
 import { EvidencePanel } from "./components/EvidencePanel";
 import { MetricGrid } from "./components/MetricGrid";
 import { PriceChart } from "./components/PriceChart";
@@ -16,7 +17,18 @@ const defaultRequest: AnalyzeRequest = {
   start_date: "2026-01-01",
   end_date: formatLocalDate(new Date()),
   horizon: "1m",
-  risk_preference: "balanced"
+  risk_preference: "balanced",
+  backtest_config: {
+    strategy_set: "compare_all",
+    short_window: 5,
+    long_window: 20,
+    momentum_window: 20,
+    rsi_window: 14,
+    rsi_buy_threshold: 30,
+    rsi_sell_threshold: 70,
+    initial_cash: 100000,
+    fee_rate: 0.0003
+  }
 };
 
 function formatLocalDate(value: Date) {
@@ -92,6 +104,26 @@ export function App() {
     setSnapshot(await fetchAnalysis(runId));
   }
 
+  function updateBacktestConfig(key: keyof AnalyzeRequest["backtest_config"], value: string) {
+    const numericKeys = new Set([
+      "short_window",
+      "long_window",
+      "momentum_window",
+      "rsi_window",
+      "rsi_buy_threshold",
+      "rsi_sell_threshold",
+      "initial_cash",
+      "fee_rate"
+    ]);
+    setForm((current) => ({
+      ...current,
+      backtest_config: {
+        ...current.backtest_config,
+        [key]: numericKeys.has(key) ? Number(value) : value
+      }
+    }));
+  }
+
   return (
     <main className="app-shell">
       <header className="topbar">
@@ -153,6 +185,108 @@ export function App() {
               <option value="aggressive">进取</option>
             </select>
           </label>
+          <div className="form-section">
+            <h2>回测参数</h2>
+            <label>
+              策略范围
+              <select
+                value={form.backtest_config.strategy_set}
+                onChange={(event) => updateBacktestConfig("strategy_set", event.target.value)}
+              >
+                <option value="compare_all">多策略对比</option>
+                <option value="ma_cross">均线交叉</option>
+                <option value="momentum">动量策略</option>
+                <option value="rsi_reversal">RSI 反转</option>
+              </select>
+            </label>
+            <div className="two-col compact">
+              <label>
+                短均线
+                <input
+                  type="number"
+                  min={2}
+                  max={120}
+                  value={form.backtest_config.short_window}
+                  onChange={(event) => updateBacktestConfig("short_window", event.target.value)}
+                />
+              </label>
+              <label>
+                长均线
+                <input
+                  type="number"
+                  min={3}
+                  max={250}
+                  value={form.backtest_config.long_window}
+                  onChange={(event) => updateBacktestConfig("long_window", event.target.value)}
+                />
+              </label>
+            </div>
+            <div className="two-col compact">
+              <label>
+                动量窗口
+                <input
+                  type="number"
+                  min={2}
+                  max={250}
+                  value={form.backtest_config.momentum_window}
+                  onChange={(event) => updateBacktestConfig("momentum_window", event.target.value)}
+                />
+              </label>
+              <label>
+                RSI 窗口
+                <input
+                  type="number"
+                  min={2}
+                  max={120}
+                  value={form.backtest_config.rsi_window}
+                  onChange={(event) => updateBacktestConfig("rsi_window", event.target.value)}
+                />
+              </label>
+            </div>
+            <div className="two-col compact">
+              <label>
+                RSI 买入
+                <input
+                  type="number"
+                  min={1}
+                  max={50}
+                  value={form.backtest_config.rsi_buy_threshold}
+                  onChange={(event) => updateBacktestConfig("rsi_buy_threshold", event.target.value)}
+                />
+              </label>
+              <label>
+                RSI 卖出
+                <input
+                  type="number"
+                  min={50}
+                  max={99}
+                  value={form.backtest_config.rsi_sell_threshold}
+                  onChange={(event) => updateBacktestConfig("rsi_sell_threshold", event.target.value)}
+                />
+              </label>
+            </div>
+            <label>
+              初始资金
+              <input
+                type="number"
+                min={1000}
+                step={1000}
+                value={form.backtest_config.initial_cash}
+                onChange={(event) => updateBacktestConfig("initial_cash", event.target.value)}
+              />
+            </label>
+            <label>
+              手续费率
+              <input
+                type="number"
+                min={0}
+                max={0.02}
+                step={0.0001}
+                value={form.backtest_config.fee_rate}
+                onChange={(event) => updateBacktestConfig("fee_rate", event.target.value)}
+              />
+            </label>
+          </div>
           <div className="actions">
             <button type="submit" disabled={loading} title="开始分析">
               <Play size={17} aria-hidden="true" />
@@ -170,6 +304,7 @@ export function App() {
         <AgentTimeline events={latestEvents} selectedAgent={selectedAgent} onSelectAgent={setSelectedAgent} />
         <AgentDetailPanel events={latestEvents} selectedAgent={selectedAgent} />
         <PriceChart data={result?.market_data_preview ?? []} />
+        <BacktestPanel result={result} />
         <RagIngestPanel symbol={form.symbol} />
         <EvidencePanel research={result?.research ?? []} />
         <ReportPanel result={result} />
