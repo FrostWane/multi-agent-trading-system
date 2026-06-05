@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Play, RefreshCw } from "lucide-react";
+import { BarChart3, Bot, FileText, Play, RefreshCw } from "lucide-react";
 import { AgentDetailPanel } from "./components/AgentDetailPanel";
 import { AgentTimeline } from "./components/AgentTimeline";
 import { BacktestPanel } from "./components/BacktestPanel";
@@ -11,6 +11,8 @@ import { ReportPanel } from "./components/ReportPanel";
 import { StockSearch } from "./components/StockSearch";
 import { eventsUrl, fetchAnalysis, submitAnalysis } from "./lib/api";
 import type { AgentEvent, AnalysisSnapshot, AnalyzeRequest } from "./types/analysis";
+
+type WorkbenchView = "market" | "agents" | "report";
 
 const defaultRequest: AnalyzeRequest = {
   symbol: "000001",
@@ -44,11 +46,14 @@ export function App() {
   const [snapshot, setSnapshot] = useState<AnalysisSnapshot | null>(null);
   const [events, setEvents] = useState<AgentEvent[]>([]);
   const [selectedAgent, setSelectedAgent] = useState("Supervisor Agent");
+  const [activeView, setActiveView] = useState<WorkbenchView>("market");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
   const result = snapshot?.result ?? null;
   const status = snapshot?.status ?? (loading ? "running" : "idle");
+  const strategyCount = result?.backtest?.strategies?.length ?? 0;
+  const citationCount = result?.research?.length ?? 0;
   const statusText: Record<string, string> = {
     idle: "待机",
     queued: "排队中",
@@ -129,185 +134,254 @@ export function App() {
       <header className="topbar">
         <div>
           <h1>多智能体量化分析系统</h1>
-          <p>A 股研究工作台</p>
+          <p>A 股研究、回测、证据检索与报告校验工作台</p>
         </div>
-        <div className={`status-pill ${status}`}>{statusText[status] ?? status}</div>
+        <div className="topbar-meta">
+          <span>{form.symbol}</span>
+          <span>{form.start_date} 至 {form.end_date}</span>
+          <div className={`status-pill ${status}`}>{statusText[status] ?? status}</div>
+        </div>
       </header>
 
-      <section className="workspace">
+      <section className="dashboard-shell">
         <form className="control-panel" onSubmit={handleSubmit}>
-          <StockSearch
-            value={form.symbol}
-            onSelect={(stock) => setForm((current) => ({ ...current, symbol: stock.symbol }))}
-          />
-          <label>
-            股票代码
-            <input
+          <div className="control-scroll">
+            <div className="panel-heading compact-heading">
+              <div>
+                <h2>分析配置</h2>
+                <p>选择标的、时间区间和策略参数</p>
+              </div>
+            </div>
+            <StockSearch
               value={form.symbol}
-              maxLength={9}
-              onChange={(event) => setForm({ ...form, symbol: event.target.value })}
+              onSelect={(stock) => setForm((current) => ({ ...current, symbol: stock.symbol }))}
             />
-          </label>
-          <label>
-            开始日期
-            <input
-              type="date"
-              value={form.start_date}
-              onChange={(event) => setForm({ ...form, start_date: event.target.value })}
-            />
-          </label>
-          <label>
-            结束日期
-            <input
-              type="date"
-              value={form.end_date}
-              onChange={(event) => setForm({ ...form, end_date: event.target.value })}
-            />
-          </label>
-          <label>
-            分析周期
-            <select value={form.horizon} onChange={(event) => setForm({ ...form, horizon: event.target.value })}>
-              <option value="1w">1w</option>
-              <option value="1m">1m</option>
-              <option value="3m">3m</option>
-            </select>
-          </label>
-          <label>
-            风险偏好
-            <select
-              value={form.risk_preference}
-              onChange={(event) =>
-                setForm({ ...form, risk_preference: event.target.value as AnalyzeRequest["risk_preference"] })
-              }
-            >
-              <option value="conservative">稳健</option>
-              <option value="balanced">均衡</option>
-              <option value="aggressive">进取</option>
-            </select>
-          </label>
-          <div className="form-section">
-            <h2>回测参数</h2>
             <label>
-              策略范围
-              <select
-                value={form.backtest_config.strategy_set}
-                onChange={(event) => updateBacktestConfig("strategy_set", event.target.value)}
-              >
-                <option value="compare_all">多策略对比</option>
-                <option value="ma_cross">均线交叉</option>
-                <option value="momentum">动量策略</option>
-                <option value="rsi_reversal">RSI 反转</option>
+              股票代码
+              <input
+                value={form.symbol}
+                maxLength={9}
+                onChange={(event) => setForm({ ...form, symbol: event.target.value })}
+              />
+            </label>
+            <label>
+              开始日期
+              <input
+                type="date"
+                value={form.start_date}
+                onChange={(event) => setForm({ ...form, start_date: event.target.value })}
+              />
+            </label>
+            <label>
+              结束日期
+              <input
+                type="date"
+                value={form.end_date}
+                onChange={(event) => setForm({ ...form, end_date: event.target.value })}
+              />
+            </label>
+            <label>
+              分析周期
+              <select value={form.horizon} onChange={(event) => setForm({ ...form, horizon: event.target.value })}>
+                <option value="1w">1w</option>
+                <option value="1m">1m</option>
+                <option value="3m">3m</option>
               </select>
             </label>
-            <div className="two-col compact">
-              <label>
-                短均线
-                <input
-                  type="number"
-                  min={2}
-                  max={120}
-                  value={form.backtest_config.short_window}
-                  onChange={(event) => updateBacktestConfig("short_window", event.target.value)}
-                />
-              </label>
-              <label>
-                长均线
-                <input
-                  type="number"
-                  min={3}
-                  max={250}
-                  value={form.backtest_config.long_window}
-                  onChange={(event) => updateBacktestConfig("long_window", event.target.value)}
-                />
-              </label>
-            </div>
-            <div className="two-col compact">
-              <label>
-                动量窗口
-                <input
-                  type="number"
-                  min={2}
-                  max={250}
-                  value={form.backtest_config.momentum_window}
-                  onChange={(event) => updateBacktestConfig("momentum_window", event.target.value)}
-                />
-              </label>
-              <label>
-                RSI 窗口
-                <input
-                  type="number"
-                  min={2}
-                  max={120}
-                  value={form.backtest_config.rsi_window}
-                  onChange={(event) => updateBacktestConfig("rsi_window", event.target.value)}
-                />
-              </label>
-            </div>
-            <div className="two-col compact">
-              <label>
-                RSI 买入
-                <input
-                  type="number"
-                  min={1}
-                  max={50}
-                  value={form.backtest_config.rsi_buy_threshold}
-                  onChange={(event) => updateBacktestConfig("rsi_buy_threshold", event.target.value)}
-                />
-              </label>
-              <label>
-                RSI 卖出
-                <input
-                  type="number"
-                  min={50}
-                  max={99}
-                  value={form.backtest_config.rsi_sell_threshold}
-                  onChange={(event) => updateBacktestConfig("rsi_sell_threshold", event.target.value)}
-                />
-              </label>
-            </div>
             <label>
-              初始资金
-              <input
-                type="number"
-                min={1000}
-                step={1000}
-                value={form.backtest_config.initial_cash}
-                onChange={(event) => updateBacktestConfig("initial_cash", event.target.value)}
-              />
+              风险偏好
+              <select
+                value={form.risk_preference}
+                onChange={(event) =>
+                  setForm({ ...form, risk_preference: event.target.value as AnalyzeRequest["risk_preference"] })
+                }
+              >
+                <option value="conservative">稳健</option>
+                <option value="balanced">均衡</option>
+                <option value="aggressive">进取</option>
+              </select>
             </label>
-            <label>
-              手续费率
-              <input
-                type="number"
-                min={0}
-                max={0.02}
-                step={0.0001}
-                value={form.backtest_config.fee_rate}
-                onChange={(event) => updateBacktestConfig("fee_rate", event.target.value)}
-              />
-            </label>
+            <div className="form-section">
+              <h2>回测参数</h2>
+              <label>
+                策略范围
+                <select
+                  value={form.backtest_config.strategy_set}
+                  onChange={(event) => updateBacktestConfig("strategy_set", event.target.value)}
+                >
+                  <option value="compare_all">多策略对比</option>
+                  <option value="ma_cross">均线交叉</option>
+                  <option value="momentum">动量策略</option>
+                  <option value="rsi_reversal">RSI 反转</option>
+                </select>
+              </label>
+              <div className="two-col compact">
+                <label>
+                  短均线
+                  <input
+                    type="number"
+                    min={2}
+                    max={120}
+                    value={form.backtest_config.short_window}
+                    onChange={(event) => updateBacktestConfig("short_window", event.target.value)}
+                  />
+                </label>
+                <label>
+                  长均线
+                  <input
+                    type="number"
+                    min={3}
+                    max={250}
+                    value={form.backtest_config.long_window}
+                    onChange={(event) => updateBacktestConfig("long_window", event.target.value)}
+                  />
+                </label>
+              </div>
+              <div className="two-col compact">
+                <label>
+                  动量窗口
+                  <input
+                    type="number"
+                    min={2}
+                    max={250}
+                    value={form.backtest_config.momentum_window}
+                    onChange={(event) => updateBacktestConfig("momentum_window", event.target.value)}
+                  />
+                </label>
+                <label>
+                  RSI 窗口
+                  <input
+                    type="number"
+                    min={2}
+                    max={120}
+                    value={form.backtest_config.rsi_window}
+                    onChange={(event) => updateBacktestConfig("rsi_window", event.target.value)}
+                  />
+                </label>
+              </div>
+              <div className="two-col compact">
+                <label>
+                  RSI 买入
+                  <input
+                    type="number"
+                    min={1}
+                    max={50}
+                    value={form.backtest_config.rsi_buy_threshold}
+                    onChange={(event) => updateBacktestConfig("rsi_buy_threshold", event.target.value)}
+                  />
+                </label>
+                <label>
+                  RSI 卖出
+                  <input
+                    type="number"
+                    min={50}
+                    max={99}
+                    value={form.backtest_config.rsi_sell_threshold}
+                    onChange={(event) => updateBacktestConfig("rsi_sell_threshold", event.target.value)}
+                  />
+                </label>
+              </div>
+              <label>
+                初始资金
+                <input
+                  type="number"
+                  min={1000}
+                  step={1000}
+                  value={form.backtest_config.initial_cash}
+                  onChange={(event) => updateBacktestConfig("initial_cash", event.target.value)}
+                />
+              </label>
+              <label>
+                手续费率
+                <input
+                  type="number"
+                  min={0}
+                  max={0.02}
+                  step={0.0001}
+                  value={form.backtest_config.fee_rate}
+                  onChange={(event) => updateBacktestConfig("fee_rate", event.target.value)}
+                />
+              </label>
+            </div>
           </div>
-          <div className="actions">
-            <button type="submit" disabled={loading} title="开始分析">
-              <Play size={17} aria-hidden="true" />
-              分析
-            </button>
-            <button type="button" onClick={refresh} disabled={!runId} title="刷新结果">
-              <RefreshCw size={17} aria-hidden="true" />
-              刷新
-            </button>
+          <div className="control-footer">
+            <div className="run-context">
+              <span>当前任务</span>
+              <strong>{form.symbol} / {form.horizon} / {statusText[status] ?? status}</strong>
+            </div>
+            <div className="actions">
+              <button type="submit" disabled={loading} title="开始分析">
+                <Play size={17} aria-hidden="true" />
+                分析
+              </button>
+              <button type="button" onClick={refresh} disabled={!runId} title="刷新结果">
+                <RefreshCw size={17} aria-hidden="true" />
+                刷新
+              </button>
+            </div>
+            {error ? <p className="error">{error}</p> : null}
           </div>
-          {error ? <p className="error">{error}</p> : null}
         </form>
 
-        <MetricGrid result={result} />
-        <AgentTimeline events={latestEvents} selectedAgent={selectedAgent} onSelectAgent={setSelectedAgent} />
-        <AgentDetailPanel events={latestEvents} selectedAgent={selectedAgent} />
-        <PriceChart data={result?.market_data_preview ?? []} />
-        <BacktestPanel result={result} />
-        <RagIngestPanel symbol={form.symbol} />
-        <EvidencePanel research={result?.research ?? []} />
-        <ReportPanel result={result} />
+        <section className="main-workbench">
+          <MetricGrid result={result} />
+
+          <nav className="view-tabs" aria-label="工作台视图">
+            <button
+              type="button"
+              className={activeView === "market" ? "active" : ""}
+              onClick={() => setActiveView("market")}
+            >
+              <BarChart3 size={17} aria-hidden="true" />
+              行情回测
+              <span>{strategyCount || "-"}</span>
+            </button>
+            <button
+              type="button"
+              className={activeView === "agents" ? "active" : ""}
+              onClick={() => setActiveView("agents")}
+            >
+              <Bot size={17} aria-hidden="true" />
+              智能体协作
+              <span>{latestEvents.length}</span>
+            </button>
+            <button
+              type="button"
+              className={activeView === "report" ? "active" : ""}
+              onClick={() => setActiveView("report")}
+            >
+              <FileText size={17} aria-hidden="true" />
+              报告证据
+              <span>{citationCount}</span>
+            </button>
+          </nav>
+
+          <div className="tab-panel">
+            {activeView === "market" ? (
+              <div className="market-view">
+                <PriceChart data={result?.market_data_preview ?? []} />
+                <BacktestPanel result={result} />
+              </div>
+            ) : null}
+
+            {activeView === "agents" ? (
+              <div className="agent-view">
+                <AgentTimeline events={latestEvents} selectedAgent={selectedAgent} onSelectAgent={setSelectedAgent} />
+                <AgentDetailPanel events={latestEvents} selectedAgent={selectedAgent} />
+              </div>
+            ) : null}
+
+            {activeView === "report" ? (
+              <div className="report-view">
+                <ReportPanel result={result} />
+                <div className="evidence-column">
+                  <EvidencePanel research={result?.research ?? []} />
+                  <RagIngestPanel symbol={form.symbol} />
+                </div>
+              </div>
+            ) : null}
+          </div>
+        </section>
       </section>
     </main>
   );

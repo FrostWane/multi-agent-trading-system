@@ -14,12 +14,11 @@ describe("App", () => {
   it("renders the trading workspace", () => {
     render(<App />);
     expect(screen.getByText("多智能体量化分析系统")).toBeInTheDocument();
-    expect(screen.getByText("智能体流程")).toBeInTheDocument();
-    expect(screen.getByText("智能体详情")).toBeInTheDocument();
-    expect(screen.getByText("RAG 导入")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /行情回测/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /智能体协作/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /报告证据/i })).toBeInTheDocument();
     expect(screen.getByText("回测参数")).toBeInTheDocument();
     expect(screen.getByText("策略回测对比")).toBeInTheDocument();
-    expect(screen.getByText("暂无报告。")).toBeInTheDocument();
     expect(screen.getByLabelText("策略范围")).toBeInTheDocument();
     expect(screen.getByLabelText("股票搜索")).toBeInTheDocument();
     expect(screen.getByLabelText("开始日期")).toHaveValue("2026-01-01");
