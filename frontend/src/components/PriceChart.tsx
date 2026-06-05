@@ -145,7 +145,13 @@ export function PriceChart({ data }: { data: PricePoint[] }) {
               />
               <YAxis yAxisId="volume" hide domain={[0, "dataMax * 3"]} />
               <Tooltip content={tooltipContent} />
-              <ReferenceLine yAxisId="price" y={latest?.close} stroke="#94a3b8" strokeDasharray="4 4" />
+              <ReferenceLine
+                xAxisId="price"
+                yAxisId="price"
+                y={latest?.close}
+                stroke="#94a3b8"
+                strokeDasharray="4 4"
+              />
               <Bar
                 dataKey="close"
                 yAxisId="price"
