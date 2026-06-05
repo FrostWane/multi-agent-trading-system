@@ -43,6 +43,7 @@ class Settings:
     qdrant_collection: str = os.getenv("QDRANT_COLLECTION", "market_research")
     data_provider: str = os.getenv("DATA_PROVIDER", "akshare")
     use_sample_data_fallback: bool = os.getenv("USE_SAMPLE_DATA_FALLBACK", "true").lower() == "true"
+    akshare_no_proxy: bool = os.getenv("AKSHARE_NO_PROXY", "true").lower() == "true"
     cors_origins: tuple[str, ...] = tuple(
         _split_csv(os.getenv("CORS_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173"))
     )

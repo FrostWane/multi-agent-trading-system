@@ -456,7 +456,7 @@ export function App() {
           <div className="tab-panel">
             {activeView === "market" ? (
               <div className="market-view">
-                <PriceChart data={result?.market_data_preview ?? []} />
+                <PriceChart data={result?.market_data_preview ?? []} meta={result?.market_data_meta} />
                 <BacktestPanel result={result} />
               </div>
             ) : null}

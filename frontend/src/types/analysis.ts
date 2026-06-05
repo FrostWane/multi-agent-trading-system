@@ -56,6 +56,7 @@ export interface AnalysisSnapshot {
 export interface AnalysisResult {
   engine: string;
   agents: string[];
+  market_data_meta?: MarketDataMeta;
   market_data_preview: PricePoint[];
   indicators: Record<string, unknown>;
   research: ResearchItem[];
@@ -101,6 +102,15 @@ export interface AnalysisResult {
     llm_enabled?: boolean;
     llm_error?: string;
   };
+}
+
+export interface MarketDataMeta {
+  provider?: string;
+  provider_label?: string;
+  adjust?: string;
+  adjust_label?: string;
+  is_sample?: boolean;
+  fallback_reason?: string;
 }
 
 export interface PricePoint {

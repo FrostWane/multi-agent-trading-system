@@ -52,17 +52,21 @@ def _market_data_agent(state: AnalysisState, emit: EmitEvent | None) -> Analysis
     request = state["request"]
     _emit(emit, "Market Data Agent", "running", "正在获取 A 股历史行情。")
     provider = MarketDataProvider()
-    state["market_data"] = provider.get_stock_history(
+    market_payload = provider.get_stock_history_with_meta(
         symbol=request["symbol"],
         start_date=request["start_date"],
         end_date=request["end_date"],
     )
+    state["market_data"] = market_payload["rows"]
+    state["market_data_metadata"] = market_payload["metadata"]
+    source_label = state["market_data_metadata"].get("provider_label", "未知数据源")
+    adjust_label = state["market_data_metadata"].get("adjust_label", "未知复权")
     _emit(
         emit,
         "Market Data Agent",
         "completed",
-        f"已加载 {len(state['market_data'])} 条 OHLCV 行情数据。",
-        {"rows": len(state["market_data"])},
+        f"已从 {source_label}（{adjust_label}）加载 {len(state['market_data'])} 条 OHLCV 行情数据。",
+        {"rows": len(state["market_data"]), "market_data_meta": state["market_data_metadata"]},
     )
     return state
 
@@ -230,6 +234,7 @@ def run_analysis_workflow(request: dict[str, Any], emit: EmitEvent | None = None
         "engine": result.get("engine", "unknown"),
         "agents": AGENT_SEQUENCE,
         "plan": result.get("plan", []),
+        "market_data_meta": result.get("market_data_metadata", {}),
         "market_data_preview": result.get("market_data", [])[-30:],
         "indicators": result.get("indicators", {}),
         "research": result.get("research", []),

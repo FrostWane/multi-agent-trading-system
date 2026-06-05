@@ -6,6 +6,7 @@ describe("PriceChart", () => {
   it("renders non-empty K-line data without crashing", () => {
     render(
       <PriceChart
+        meta={{ provider: "sample", adjust: "none", is_sample: true }}
         data={[
           { date: "2026-01-01", open: 10, high: 11, low: 9.8, close: 10.5, volume: 100000 },
           { date: "2026-01-02", open: 10.5, high: 10.8, low: 10.1, close: 10.2, volume: 120000 },
@@ -17,6 +18,8 @@ describe("PriceChart", () => {
     );
 
     expect(screen.getByText("K 线走势")).toBeInTheDocument();
+    expect(screen.getByText("Sample 模拟数据 · 未复权")).toBeInTheDocument();
+    expect(screen.getByText(/价格不会与同花顺一致/)).toBeInTheDocument();
     expect(screen.getByText("2026-01-07 收盘 11.30")).toBeInTheDocument();
   });
 });

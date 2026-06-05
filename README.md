@@ -28,7 +28,7 @@ flowchart LR
   Quant --> MCP
   Backtest --> MCP
   Research --> Qdrant[(Qdrant 向量数据库)]
-  MCP --> AkShare[AkShare A 股数据]
+  MCP --> AkShare[AkShare/东方财富/腾讯证券]
 ```
 
 ## 多智能体协作流程
@@ -36,7 +36,7 @@ flowchart LR
 后端提供一条专业智能体协作链路：
 
 - `Supervisor Agent`：接收用户分析请求，拆解任务并生成执行计划。
-- `Market Data Agent`：通过 AkShare 获取 A 股 OHLCV 历史行情，失败时使用确定性样例数据兜底。
+- `Market Data Agent`：按 AkShare、东方财富直连、腾讯证券、确定性样例数据的顺序获取 A 股 OHLCV 历史行情，并返回数据源元信息。
 - `Quant Analyst Agent`：计算均线、RSI、MACD、年化波动率、最大回撤和趋势特征。
 - `RAG Research Agent`：从 RAG 知识库检索市场证据，并返回可追溯引用。
 - `Risk Agent`：结合波动率、回撤、证据情绪和用户风险偏好生成风险画像。
@@ -53,7 +53,7 @@ flowchart LR
 - 大模型接入：OpenAI 兼容 `/chat/completions`，未配置 Key 时自动使用规则兜底。
 - RAG 与向量库：Qdrant 优先，本地内存检索作为离线演示兜底。
 - MCP：Python MCP server，将行情、指标、RAG、回测和风险画像封装为工具。
-- 数据源：AkShare 获取 A 股历史行情，样例数据保证测试和演示稳定。
+- 数据源：优先使用 AkShare A 股历史行情；当上游接口或代理异常时，依次切换东方财富直连、腾讯证券，最后才使用样例数据兜底。
 - 策略回测：支持买入持有、均线交叉、动量策略、RSI 反转的对比评估。
 - 前端：React、Vite、TypeScript、Recharts、lucide-react。
 - 工程化：Docker Compose、本地开发脚本、Kubernetes 部署清单。
@@ -193,7 +193,7 @@ npm run test:e2e
 - 基于 FastAPI、LangGraph、React、Qdrant、MCP、Docker 和 Kubernetes 构建多智能体 A 股量化研究平台。
 - 设计 Supervisor 驱动的多智能体工作流，将股票分析拆分为行情采集、量化指标计算、RAG 证据检索、风险评分、策略回测、报告生成和结论校验。
 - 实现基于 SSE 的智能体执行轨迹推送，使前端能够实时展示各专业智能体的状态、产出、引用证据和最终中文研究报告。
-- 接入 AkShare A 股数据源，并提供确定性样例数据兜底；补充 pytest、Vitest、Playwright 测试，以及 Docker Compose 和 K8s 部署清单。
+- 接入 AkShare、东方财富和腾讯证券多级 A 股数据源，并提供确定性样例数据兜底；补充 pytest、Vitest、Playwright 测试，以及 Docker Compose 和 K8s 部署清单。
 
 ## 当前状态
 

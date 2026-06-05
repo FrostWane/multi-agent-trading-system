@@ -9,7 +9,7 @@ import {
   XAxis,
   YAxis
 } from "recharts";
-import type { PricePoint } from "../types/analysis";
+import type { MarketDataMeta, PricePoint } from "../types/analysis";
 
 interface CandlePoint extends PricePoint {
   ma5: number | null;
@@ -28,6 +28,19 @@ interface CandleShapeProps {
     scale: (value: number) => number;
   };
 }
+
+const PROVIDER_LABELS: Record<string, string> = {
+  akshare: "AkShare",
+  eastmoney: "东方财富",
+  tencent: "腾讯证券",
+  sample: "Sample 模拟数据"
+};
+
+const ADJUST_LABELS: Record<string, string> = {
+  qfq: "前复权",
+  hfq: "后复权",
+  none: "未复权"
+};
 
 function movingAverage(data: PricePoint[], window: number, index: number) {
   if (index + 1 < window) return null;
@@ -102,9 +115,13 @@ function tooltipContent({ active, payload }: { active?: boolean; payload?: Array
   );
 }
 
-export function PriceChart({ data }: { data: PricePoint[] }) {
+export function PriceChart({ data, meta }: { data: PricePoint[]; meta?: MarketDataMeta }) {
   const chartData = enrich(data);
   const latest = chartData[chartData.length - 1];
+  const providerCode = meta?.provider ?? "";
+  const adjustCode = meta?.adjust ?? "";
+  const sourceLabel = PROVIDER_LABELS[providerCode] ?? meta?.provider_label ?? "待获取数据源";
+  const adjustLabel = adjustCode ? ` · ${ADJUST_LABELS[adjustCode] ?? meta?.adjust_label ?? adjustCode}` : "";
 
   return (
     <section className="panel chart-panel" aria-label="专业 K 线图">
@@ -113,8 +130,20 @@ export function PriceChart({ data }: { data: PricePoint[] }) {
           <h2>K 线走势</h2>
           <p>{latest ? `${latest.date} 收盘 ${latest.close.toFixed(2)}` : "暂无行情"}</p>
         </div>
-        <span>{data.length} 个交易日</span>
+        <div className="chart-meta">
+          <span className={meta?.is_sample ? "data-source sample" : "data-source"}>
+            {sourceLabel}
+            {adjustLabel}
+          </span>
+          <span>{data.length} 个交易日</span>
+        </div>
       </div>
+      {meta?.is_sample ? (
+        <p className="source-warning">
+          当前使用 Sample 模拟行情，价格不会与同花顺一致。真实行情请安装 AkShare 或关闭 sample 兜底。
+          {meta.fallback_reason ? ` 兜底原因：${meta.fallback_reason}` : ""}
+        </p>
+      ) : null}
       <div className="kline-legend">
         <span className="legend-rise">上涨</span>
         <span className="legend-fall">下跌</span>
