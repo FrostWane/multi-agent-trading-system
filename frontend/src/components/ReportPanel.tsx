@@ -13,9 +13,46 @@ const CONFIDENCE_LABELS: Record<string, string> = {
   low: "低"
 };
 
+function toDisplayText(value: unknown, fallback = ""): string {
+  if (value === null || value === undefined) return fallback;
+  if (typeof value === "string") return value;
+  if (typeof value === "number" || typeof value === "boolean") return String(value);
+  try {
+    return JSON.stringify(value);
+  } catch {
+    return fallback;
+  }
+}
+
+function toTextList(value: unknown): string[] {
+  if (Array.isArray(value)) {
+    return value.map((item) => toDisplayText(item)).filter(Boolean);
+  }
+  if (typeof value === "string") {
+    return value
+      .split(/\n+/)
+      .map((item) => item.trim())
+      .filter(Boolean);
+  }
+  if (value && typeof value === "object") {
+    return Object.entries(value).map(([key, item]) => `${key}：${toDisplayText(item)}`);
+  }
+  return [];
+}
+
 export function ReportPanel({ result }: { result: AnalysisResult | null }) {
   const report = result?.report;
   const critic = result?.critic;
+  const summary = toDisplayText(report?.summary);
+  const recommendation = toDisplayText(report?.recommendation);
+  const llmCommentary = toDisplayText(report?.llm_commentary);
+  const keyPoints = toTextList(report?.key_points);
+  const riskNotes = toTextList(report?.risk_notes);
+  const criticIssues = toTextList(critic?.issues);
+  const criticSuggestions = toTextList(critic?.suggestions);
+  const disclaimer = toDisplayText(report?.disclaimer, "本报告仅用于研究和学习，不构成任何投资建议。");
+  const llmError = toDisplayText(report?.llm_error);
+  const criticLlmError = toDisplayText(critic?.llm_error);
 
   return (
     <section className="panel report-panel" aria-label="最终报告">
@@ -23,40 +60,40 @@ export function ReportPanel({ result }: { result: AnalysisResult | null }) {
         <h2>最终报告</h2>
         <span>{result?.engine ?? "待机"}</span>
       </div>
-      {report?.summary ? (
+      {summary ? (
         <div className="report-body">
-          <p>{report.summary}</p>
+          <p>{summary}</p>
           <div className="report-tags">
-            <span>{RECOMMENDATION_LABELS[report.recommendation ?? ""] ?? report.recommendation}</span>
+            <span>{RECOMMENDATION_LABELS[recommendation] ?? recommendation}</span>
             <span>置信度 {CONFIDENCE_LABELS[critic?.confidence ?? ""] ?? "待定"}</span>
             <span>{critic?.passed ? "校验通过" : "等待校验"}</span>
-            <span>{report.llm_enabled ? "大模型增强" : "规则模式"}</span>
+            <span>{report?.llm_enabled ? "大模型增强" : "规则模式"}</span>
           </div>
-          {report.llm_commentary ? <p className="llm-commentary">{report.llm_commentary}</p> : null}
-          {report.key_points && report.key_points.length > 0 ? (
+          {llmCommentary ? <p className="llm-commentary">{llmCommentary}</p> : null}
+          {keyPoints.length > 0 ? (
             <div className="report-list">
               <strong>关键要点</strong>
               <ul>
-                {report.key_points.map((item) => (
-                  <li key={item}>{item}</li>
+                {keyPoints.map((item, index) => (
+                  <li key={`${item}-${index}`}>{item}</li>
                 ))}
               </ul>
             </div>
           ) : null}
-          {report.risk_notes && report.risk_notes.length > 0 ? (
+          {riskNotes.length > 0 ? (
             <div className="report-list">
               <strong>风险提示</strong>
               <ul>
-                {report.risk_notes.map((item) => (
-                  <li key={item}>{item}</li>
+                {riskNotes.map((item, index) => (
+                  <li key={`${item}-${index}`}>{item}</li>
                 ))}
               </ul>
             </div>
           ) : null}
-          {critic?.issues && critic.issues.length > 0 ? (
+          {criticIssues.length > 0 ? (
             <div className="critic warning">
               <AlertTriangle size={18} aria-hidden="true" />
-              <span>{critic.issues.join(", ")}</span>
+              <span>{criticIssues.join(", ")}</span>
             </div>
           ) : (
             <div className="critic">
@@ -64,19 +101,19 @@ export function ReportPanel({ result }: { result: AnalysisResult | null }) {
               <span>结论校验完成</span>
             </div>
           )}
-          {critic?.suggestions && critic.suggestions.length > 0 ? (
+          {criticSuggestions.length > 0 ? (
             <div className="report-list">
               <strong>校验建议</strong>
               <ul>
-                {critic.suggestions.map((item) => (
-                  <li key={item}>{item}</li>
+                {criticSuggestions.map((item, index) => (
+                  <li key={`${item}-${index}`}>{item}</li>
                 ))}
               </ul>
             </div>
           ) : null}
-          {report.llm_error ? <small>大模型报告兜底原因：{report.llm_error}</small> : null}
-          {critic?.llm_error ? <small>大模型校验兜底原因：{critic.llm_error}</small> : null}
-          <small>{report.disclaimer}</small>
+          {llmError ? <small>大模型报告兜底原因：{llmError}</small> : null}
+          {criticLlmError ? <small>大模型校验兜底原因：{criticLlmError}</small> : null}
+          <small>{disclaimer}</small>
         </div>
       ) : (
         <p className="empty">暂无报告。</p>

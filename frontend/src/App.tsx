@@ -14,6 +14,8 @@ import type { AgentEvent, AnalysisSnapshot, AnalyzeRequest } from "./types/analy
 
 type WorkbenchView = "market" | "agents" | "report";
 
+const SESSION_STORAGE_KEY = "multi-agent-trading-system:last-session";
+
 const defaultRequest: AnalyzeRequest = {
   symbol: "000001",
   start_date: "2026-01-01",
@@ -40,20 +42,66 @@ function formatLocalDate(value: Date) {
   return `${year}-${month}-${day}`;
 }
 
+interface PersistedSession {
+  activeView?: WorkbenchView;
+  events?: AgentEvent[];
+  form?: AnalyzeRequest;
+  runId?: string;
+  selectedAgent?: string;
+  snapshot?: AnalysisSnapshot | null;
+}
+
+function isWorkbenchView(value: unknown): value is WorkbenchView {
+  return value === "market" || value === "agents" || value === "report";
+}
+
+function isActiveStatus(status: AnalysisSnapshot["status"] | undefined) {
+  return status === "queued" || status === "running";
+}
+
+function readPersistedSession(): PersistedSession {
+  try {
+    const raw = window.localStorage.getItem(SESSION_STORAGE_KEY);
+    if (!raw) return {};
+    const parsed = JSON.parse(raw) as PersistedSession;
+    return {
+      activeView: isWorkbenchView(parsed.activeView) ? parsed.activeView : undefined,
+      events: Array.isArray(parsed.events) ? parsed.events : undefined,
+      form: parsed.form?.symbol ? parsed.form : undefined,
+      runId: typeof parsed.runId === "string" ? parsed.runId : undefined,
+      selectedAgent: typeof parsed.selectedAgent === "string" ? parsed.selectedAgent : undefined,
+      snapshot: parsed.snapshot ?? null
+    };
+  } catch {
+    return {};
+  }
+}
+
+function writePersistedSession(session: PersistedSession) {
+  try {
+    window.localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(session));
+  } catch {
+    // localStorage can be unavailable in private mode or full quota; analysis still works in memory.
+  }
+}
+
 export function App() {
-  const [form, setForm] = useState<AnalyzeRequest>(defaultRequest);
-  const [runId, setRunId] = useState<string>("");
-  const [snapshot, setSnapshot] = useState<AnalysisSnapshot | null>(null);
-  const [events, setEvents] = useState<AgentEvent[]>([]);
-  const [selectedAgent, setSelectedAgent] = useState("Supervisor Agent");
-  const [activeView, setActiveView] = useState<WorkbenchView>("market");
-  const [loading, setLoading] = useState(false);
+  const persistedSession = useMemo(readPersistedSession, []);
+  const [form, setForm] = useState<AnalyzeRequest>(() => persistedSession.form ?? defaultRequest);
+  const [runId, setRunId] = useState<string>(() => persistedSession.runId ?? "");
+  const [snapshot, setSnapshot] = useState<AnalysisSnapshot | null>(() => persistedSession.snapshot ?? null);
+  const [events, setEvents] = useState<AgentEvent[]>(() => persistedSession.events ?? []);
+  const [selectedAgent, setSelectedAgent] = useState(() => persistedSession.selectedAgent ?? "Supervisor Agent");
+  const [activeView, setActiveView] = useState<WorkbenchView>(() => persistedSession.activeView ?? "market");
+  const [loading, setLoading] = useState(() => isActiveStatus(persistedSession.snapshot?.status));
   const [error, setError] = useState("");
 
   const result = snapshot?.result ?? null;
   const status = snapshot?.status ?? (loading ? "running" : "idle");
-  const strategyCount = result?.backtest?.strategies?.length ?? 0;
-  const citationCount = result?.research?.length ?? 0;
+  const strategies = Array.isArray(result?.backtest?.strategies) ? result.backtest.strategies : [];
+  const researchItems = Array.isArray(result?.research) ? result.research : [];
+  const strategyCount = strategies.length;
+  const citationCount = researchItems.length;
   const statusText: Record<string, string> = {
     idle: "待机",
     queued: "排队中",
@@ -71,16 +119,58 @@ export function App() {
   }, [events, snapshot?.events]);
 
   useEffect(() => {
+    writePersistedSession({
+      activeView,
+      events: latestEvents,
+      form,
+      runId,
+      selectedAgent,
+      snapshot
+    });
+  }, [activeView, form, latestEvents, runId, selectedAgent, snapshot]);
+
+  useEffect(() => {
+    if (!runId || snapshot) return;
+    let cancelled = false;
+    setLoading(true);
+    fetchAnalysis(runId)
+      .then((next) => {
+        if (cancelled) return;
+        setSnapshot(next);
+        setForm(next.request);
+        setLoading(isActiveStatus(next.status));
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        setError(err instanceof Error ? err.message : "恢复上次分析失败");
+        setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [runId, snapshot]);
+
+  useEffect(() => {
     if (!runId) return;
     const source = new EventSource(eventsUrl(runId));
     source.onmessage = (message) => {
-      const event = JSON.parse(message.data) as AgentEvent;
-      setEvents((current) => [...current, event]);
+      try {
+        const event = JSON.parse(message.data) as AgentEvent;
+        setEvents((current) => [...current, event]);
+      } catch {
+        setError("Agent 事件解析失败，已保留当前结果");
+      }
     };
     source.addEventListener("done", async () => {
-      const next = await fetchAnalysis(runId);
-      setSnapshot(next);
-      setLoading(false);
+      try {
+        const next = await fetchAnalysis(runId);
+        setSnapshot(next);
+        setForm(next.request);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "结果刷新失败");
+      } finally {
+        setLoading(false);
+      }
       source.close();
     });
     source.onerror = () => {
@@ -106,7 +196,14 @@ export function App() {
 
   async function refresh() {
     if (!runId) return;
-    setSnapshot(await fetchAnalysis(runId));
+    try {
+      const next = await fetchAnalysis(runId);
+      setSnapshot(next);
+      setForm(next.request);
+      setLoading(isActiveStatus(next.status));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "刷新失败");
+    }
   }
 
   function updateBacktestConfig(key: keyof AnalyzeRequest["backtest_config"], value: string) {
@@ -375,7 +472,7 @@ export function App() {
               <div className="report-view">
                 <ReportPanel result={result} />
                 <div className="evidence-column">
-                  <EvidencePanel research={result?.research ?? []} />
+                  <EvidencePanel research={researchItems} />
                   <RagIngestPanel symbol={form.symbol} />
                 </div>
               </div>
